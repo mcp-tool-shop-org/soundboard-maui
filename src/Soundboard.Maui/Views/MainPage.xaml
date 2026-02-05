@@ -25,7 +25,7 @@
                         FontSize="16"
                         FontAttributes="Bold" />
                     <Editor
-                        Placeholder="Try: Hello, welcome to the future of speech."
+                        Placeholder="Type anything you want to hear spoken..."
                         Text="{Binding Text}"
                         AutoSize="TextChanges"
                         HeightRequest="120"

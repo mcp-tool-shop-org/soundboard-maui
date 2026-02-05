@@ -22,7 +22,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private string? _selectedVoice;
     private bool _isSpeaking;
     private string _status = "Ready";
-    private string _hintText = "Type anything above, pick a style, and hit Speak.";
+    private string _hintText = "Type a line \u2014 anything works.";
     private bool _showHint = true;
     private bool _showWelcome;
 
@@ -115,7 +115,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     {
         try
         {
-            Status = "Connecting \u2014 this usually takes a second";
+            Status = "Connecting\u2026 this usually takes a second.";
             var health = await _client.GetHealthAsync(ct);
             Status = $"\u25cf Engine v{health.EngineVersion} (API {health.ApiVersion})";
 
@@ -162,7 +162,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
             });
 
             await _client.SpeakAsync(
-                new SpeakRequest(Text, SelectedPreset ?? "assistant", SelectedVoice ?? "default"),
+                new SpeakRequest(Text, SelectedPreset ?? "narrator", SelectedVoice ?? "default"),
                 progress,
                 ct);
 
@@ -174,7 +174,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         }
         catch (Exception)
         {
-            Status = "Something went wrong — try again";
+            Status = "Something didn\u2019t work. Try again in a moment.";
         }
         finally
         {
