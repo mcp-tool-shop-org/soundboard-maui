@@ -8,12 +8,17 @@ using Soundboard.Client.Models;
 
 namespace Soundboard.Client;
 
+/// <summary>
+/// Default implementation of <see cref="ISoundboardClient"/>.
+/// Communicates with the engine over HTTP (control plane) and WebSocket (streaming audio).
+/// </summary>
 public sealed class SoundboardClient : ISoundboardClient
 {
     private readonly HttpClient _http;
     private readonly SoundboardClientOptions _options;
     private readonly ILogger _logger;
 
+    /// <summary>Creates a new client with optional configuration, HTTP client, and logger.</summary>
     public SoundboardClient(
         SoundboardClientOptions? options = null,
         HttpClient? httpClient = null,
@@ -35,6 +40,7 @@ public sealed class SoundboardClient : ISoundboardClient
         _logger = logger ?? NullLogger.Instance;
     }
 
+    /// <inheritdoc />
     public async Task<EngineInfo> GetHealthAsync(CancellationToken ct = default)
     {
         _logger.LogDebug("GET /api/health");
@@ -44,6 +50,7 @@ public sealed class SoundboardClient : ISoundboardClient
         ) ?? throw new InvalidOperationException("Invalid health response");
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<string>> GetPresetsAsync(CancellationToken ct = default)
     {
         _logger.LogDebug("GET /api/presets");
@@ -55,6 +62,7 @@ public sealed class SoundboardClient : ISoundboardClient
         return presets;
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<string>> GetVoicesAsync(CancellationToken ct = default)
     {
         _logger.LogDebug("GET /api/voices");
@@ -66,6 +74,7 @@ public sealed class SoundboardClient : ISoundboardClient
         return voices;
     }
 
+    /// <inheritdoc />
     public async Task SpeakAsync(
         SpeakRequest request,
         IProgress<AudioChunk> audioProgress,
@@ -153,12 +162,14 @@ public sealed class SoundboardClient : ISoundboardClient
             requestId, chunkCount);
     }
 
+    /// <inheritdoc />
     public async Task StopAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("POST /api/stop");
         await _http.PostAsync("/api/stop", null, ct);
     }
 
+    /// <inheritdoc />
     public ValueTask DisposeAsync()
     {
         _logger.LogDebug("SoundboardClient disposing");
