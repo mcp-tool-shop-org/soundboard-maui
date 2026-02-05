@@ -16,6 +16,9 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private CancellationTokenSource? _statusResetCts;
 
     private const string WelcomePrefKey = "HasSeenWelcome";
+    private const string LastTextKey = "LastText";
+    private const string LastStyleKey = "LastStyle";
+    private const string LastVoiceKey = "LastVoice";
     private const string WelcomePhrase = "Welcome to the future of voice.";
 
     private const string FirstRunHint = "Type a line \u2014 anything works.";
@@ -53,12 +56,14 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
 
         if (_showWelcome)
         {
-            _text = WelcomePhrase;   // pre-fill so Speak is enabled immediately
-            _showHint = false;       // don't show hint over pre-filled text
+            _text = WelcomePhrase;
+            _showHint = false;
             _hintText = FirstRunHint;
         }
         else
         {
+            _text = Preferences.Get(LastTextKey, "");
+            _showHint = string.IsNullOrWhiteSpace(_text);
             _hintText = ReturningHint;
         }
 
@@ -87,6 +92,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
             if (SetField(ref _text, value))
             {
                 ShowHint = string.IsNullOrWhiteSpace(value);
+                Preferences.Set(LastTextKey, value ?? "");
                 RefreshCommands();
             }
         }
@@ -95,13 +101,21 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     public string? SelectedPreset
     {
         get => _selectedPreset;
-        set => SetField(ref _selectedPreset, value);
+        set
+        {
+            if (SetField(ref _selectedPreset, value) && value is not null)
+                Preferences.Set(LastStyleKey, value);
+        }
     }
 
     public string? SelectedVoice
     {
         get => _selectedVoice;
-        set => SetField(ref _selectedVoice, value);
+        set
+        {
+            if (SetField(ref _selectedVoice, value) && value is not null)
+                Preferences.Set(LastVoiceKey, value);
+        }
     }
 
     public bool IsSpeaking
@@ -205,12 +219,18 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
             var presets = await _client.GetPresetsAsync(ct);
             Presets.Clear();
             foreach (var p in presets) Presets.Add(p);
-            SelectedPreset = PickBestDefault(Presets, "expressive", "conversational", "narrator");
+            var savedStyle = Preferences.Get(LastStyleKey, "");
+            SelectedPreset = (!string.IsNullOrEmpty(savedStyle) && Presets.Contains(savedStyle))
+                ? savedStyle
+                : PickBestDefault(Presets, "expressive", "conversational", "narrator");
 
             var voices = await _client.GetVoicesAsync(ct);
             Voices.Clear();
             foreach (var v in voices) Voices.Add(v);
-            SelectedVoice = PickBestDefault(Voices, "default", "neutral");
+            var savedVoice = Preferences.Get(LastVoiceKey, "");
+            SelectedVoice = (!string.IsNullOrEmpty(savedVoice) && Voices.Contains(savedVoice))
+                ? savedVoice
+                : PickBestDefault(Voices, "default", "neutral");
 
             PickersLoading = false;
         }
