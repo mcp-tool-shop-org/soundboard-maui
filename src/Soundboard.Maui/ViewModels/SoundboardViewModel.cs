@@ -128,9 +128,9 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
             foreach (var v in voices) Voices.Add(v);
             if (Voices.Count > 0) SelectedVoice = Voices[0];
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Status = $"\u25cb Offline: {ex.Message}";
+            Status = "\u25cb Offline \u2014 engine not reachable";
         }
     }
 
@@ -165,15 +165,15 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
                 progress,
                 ct);
 
-            Status = $"Done ({_player.BufferedChunks} chunks)";
+            Status = "\u25cf Done — ready for more";
         }
         catch (OperationCanceledException)
         {
             Status = "Stopped";
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Status = $"Error: {ex.Message}";
+            Status = "Something went wrong — try again";
         }
         finally
         {
