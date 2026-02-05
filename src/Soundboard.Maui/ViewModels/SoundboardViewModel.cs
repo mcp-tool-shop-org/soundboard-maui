@@ -18,7 +18,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private const string WelcomePhrase = "Welcome to the future of voice.";
 
     private const string FirstRunHint = "Type a line \u2014 anything works.";
-    private const string ReturningHint = "Try changing the preset for a different delivery style.";
+    private const string ReturningHint = "Try a different style for a new delivery.";
 
     private string _text = "";
     private string? _selectedPreset;
@@ -135,7 +135,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
             IsOffline = false;
             Status = "Connecting\u2026 this usually takes a second.";
             var health = await _client.GetHealthAsync(ct);
-            Status = $"\u25cf Engine v{health.EngineVersion} (API {health.ApiVersion})";
+            Status = "Connected";
 
             var presets = await _client.GetPresetsAsync(ct);
             Presets.Clear();
@@ -163,7 +163,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         var ct = _speakCts.Token;
 
         IsSpeaking = true;
-        Status = "Speaking...";
+        Status = "Streaming live\u2026";
 
         try
         {
@@ -176,7 +176,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
                 if (firstChunk)
                 {
                     firstChunk = false;
-                    Status = "Playing...";
+                    Status = "Streaming live\u2026";
                 }
             });
 
@@ -185,7 +185,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
                 progress,
                 ct);
 
-            Status = "\u25cf Done — ready for more";
+            Status = "Done";
         }
         catch (OperationCanceledException)
         {

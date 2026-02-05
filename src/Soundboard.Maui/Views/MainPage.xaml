@@ -25,7 +25,7 @@
                 <!-- 1. Text input -->
                 <VerticalStackLayout Spacing="4">
                     <Label
-                        Text="What should it say?"
+                        Text="Text"
                         FontSize="16"
                         FontAttributes="Bold" />
                     <Editor
@@ -46,13 +46,9 @@
 
                 <!-- 2. Pickers -->
                 <VerticalStackLayout Spacing="4">
-                    <Label
-                        Text="How should it sound?"
-                        FontSize="14"
-                        TextColor="{AppThemeBinding Light=#444444, Dark=#CCCCCC}" />
                     <HorizontalStackLayout Spacing="12">
                         <Picker
-                            Title="Preset"
+                            Title="Style"
                             ItemsSource="{Binding Presets}"
                             SelectedItem="{Binding SelectedPreset}"
                             WidthRequest="200" />
@@ -125,7 +121,7 @@
 
                     <!-- Subhead -->
                     <Label
-                        Text="Type a line, pick a vibe, and press Speak."
+                        Text="Type a line, pick a style, and press Speak."
                         FontSize="15"
                         TextColor="{AppThemeBinding Light=#555555, Dark=#BBBBBB}"
                         HorizontalTextAlignment="Center" />
