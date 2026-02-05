@@ -21,6 +21,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private string? _selectedPreset;
     private string? _selectedVoice;
     private bool _isSpeaking;
+    private bool _isOffline;
     private string _status = "Ready";
     private string _hintText = "Type a line \u2014 anything works.";
     private bool _showHint = true;
@@ -39,12 +40,14 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         StopCommand = new Command(() => Stop(), () => IsSpeaking);
         WelcomeSpeakCommand = new Command(async () => await WelcomeSpeakAsync());
         DismissWelcomeCommand = new Command(DismissWelcome);
+        RetryConnectCommand = new Command(async () => await LoadAsync(), () => IsOffline);
     }
 
     public ICommand SpeakCommand { get; }
     public ICommand StopCommand { get; }
     public ICommand WelcomeSpeakCommand { get; }
     public ICommand DismissWelcomeCommand { get; }
+    public ICommand RetryConnectCommand { get; }
 
     public string Text
     {
@@ -108,6 +111,16 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         private set => SetField(ref _showWelcome, value);
     }
 
+    public bool IsOffline
+    {
+        get => _isOffline;
+        private set
+        {
+            if (SetField(ref _isOffline, value))
+                (RetryConnectCommand as Command)?.ChangeCanExecute();
+        }
+    }
+
     public bool CanSpeak => !IsSpeaking && !string.IsNullOrWhiteSpace(Text);
     public bool ShowSpeakHint => !CanSpeak && !IsSpeaking;
 
@@ -115,6 +128,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     {
         try
         {
+            IsOffline = false;
             Status = "Connecting\u2026 this usually takes a second.";
             var health = await _client.GetHealthAsync(ct);
             Status = $"\u25cf Engine v{health.EngineVersion} (API {health.ApiVersion})";
@@ -131,7 +145,8 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         }
         catch (Exception)
         {
-            Status = "\u25cb Offline \u2014 engine not reachable";
+            IsOffline = true;
+            Status = "\u25cb Offline \u2014 tap to reconnect";
         }
     }
 

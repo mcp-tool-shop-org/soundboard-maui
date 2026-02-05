@@ -11,12 +11,16 @@
         <ScrollView Opacity="{Binding ShowWelcome, Converter={StaticResource WelcomeOpacityConverter}}">
             <VerticalStackLayout Spacing="16" Padding="20" MaximumWidthRequest="600">
 
-                <!-- Engine status -->
+                <!-- Engine status (tappable when offline to retry) -->
                 <Label
                     Text="{Binding Status}"
                     FontSize="12"
                     TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}"
-                    HorizontalOptions="Start" />
+                    HorizontalOptions="Start">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding RetryConnectCommand}" />
+                    </Label.GestureRecognizers>
+                </Label>
 
                 <!-- 1. Text input -->
                 <VerticalStackLayout Spacing="4">
