@@ -99,7 +99,7 @@
                 </Grid>
 
                 <Label
-                    Text="Type some text above, then press Speak."
+                    Text="{Binding SpeakHintText}"
                     IsVisible="{Binding ShowSpeakHint}"
                     FontSize="12"
                     TextColor="{AppThemeBinding Light=#999999, Dark=#777777}"

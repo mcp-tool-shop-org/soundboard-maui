@@ -25,6 +25,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private string? _selectedVoice;
     private bool _isSpeaking;
     private bool _isOffline;
+    private bool _isConnected;
     private string _status = "Ready";
     private Color _statusColor = Colors.Gray;
     private string _hintText = FirstRunHint;
@@ -149,7 +150,24 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    public bool CanSpeak => !IsSpeaking && !string.IsNullOrWhiteSpace(Text);
+    public bool IsConnected
+    {
+        get => _isConnected;
+        private set
+        {
+            if (SetField(ref _isConnected, value))
+                RefreshCommands();
+        }
+    }
+
+    public bool CanSpeak => !IsSpeaking && !string.IsNullOrWhiteSpace(Text) && IsConnected;
+
+    public string SpeakHintText =>
+        IsOffline ? "Disconnected — tap the status above to reconnect." :
+        !IsConnected ? "Connecting to voice engine\u2026" :
+        string.IsNullOrWhiteSpace(Text) ? "Type a line to hear it spoken." :
+        "";
+
     public bool ShowSpeakHint => !CanSpeak && !IsSpeaking;
 
     public async Task LoadAsync(CancellationToken ct = default)
@@ -157,8 +175,10 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         try
         {
             IsOffline = false;
+            IsConnected = false;
             SetStatus("Connecting\u2026", Colors.Gray);
             var health = await _client.GetHealthAsync(ct);
+            IsConnected = true;
             SetStatus("Connected", Colors.Green);
 
             var presets = await _client.GetPresetsAsync(ct);
@@ -174,7 +194,8 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         catch (Exception)
         {
             IsOffline = true;
-            SetStatus("Offline", Colors.Red, retryHint: true);
+            IsConnected = false;
+            SetStatus("Disconnected", Colors.Red, retryHint: true);
         }
     }
 
@@ -265,6 +286,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         (StopCommand as Command)?.ChangeCanExecute();
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSpeak)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowSpeakHint)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpeakHintText)));
     }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
