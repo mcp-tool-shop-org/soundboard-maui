@@ -5,6 +5,11 @@
     x:Class="Soundboard.Maui.Views.MainPage"
     Title="Soundboard">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="About" Clicked="OnAboutClicked"
+                     AutomationProperties.Name="About this app" />
+    </ContentPage.ToolbarItems>
+
     <Grid>
 
         <!-- Main UI (always present, dimmed when welcome is showing) -->

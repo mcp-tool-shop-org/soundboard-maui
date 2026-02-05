@@ -23,6 +23,9 @@ public partial class MainPage : ContentPage
             TextEditor.Focus();
     }
 
+    private async void OnAboutClicked(object? sender, EventArgs e)
+        => await Navigation.PushAsync(new AboutPage());
+
 #if WINDOWS
     protected override void OnHandlerChanged()
     {
