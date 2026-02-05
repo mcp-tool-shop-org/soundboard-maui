@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Soundboard.Client;
@@ -12,6 +13,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly ISoundboardClient _client;
     private readonly IAudioPlayer _player;
+    private readonly SemaphoreSlim _speakLock = new(1, 1);
     private CancellationTokenSource? _speakCts;
     private CancellationTokenSource? _statusResetCts;
     private CancellationTokenSource? _reconnectCts;
@@ -220,10 +222,12 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
                 IsConnected = false;
                 PickersLoading = true;
                 SetStatus(attempt == 0 ? "Connecting\u2026" : "Reconnecting\u2026", Colors.Gray);
+                Log(attempt == 0 ? "connect:start" : $"connect:retry:{attempt}");
 
                 var health = await _client.GetHealthAsync(ct);
                 IsConnected = true;
                 SetStatus("Connected", Colors.Green);
+                Log("connect:ok");
 
                 var presets = await _client.GetPresetsAsync(ct);
                 Presets.Clear();
@@ -274,12 +278,22 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     {
         if (!CanSpeak) return;
 
+        // If already speaking, stop first then re-enter
+        if (IsSpeaking)
+        {
+            Stop();
+            await Task.Yield(); // let UI settle
+        }
+
+        if (!await _speakLock.WaitAsync(0)) return; // already locked — drop duplicate
+
         _speakCts?.Cancel();
         _speakCts = new CancellationTokenSource();
         var ct = _speakCts.Token;
 
         IsSpeaking = true;
         SetStatus("Streaming live\u2026", Color.FromArgb("#2196F3"));
+        Log("speak:start");
 
         try
         {
@@ -293,6 +307,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
                 {
                     firstChunk = false;
                     SetStatus("Streaming live\u2026", Color.FromArgb("#2196F3"));
+                    Log("speak:first-chunk");
                 }
             });
 
@@ -302,18 +317,22 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
                 ct);
 
             SetStatusTransient("Done", Colors.Green, 1500);
+            Log("speak:done");
         }
         catch (OperationCanceledException)
         {
             SetStatusTransient("Stopped", Colors.Gray, 1000);
+            Log("speak:cancelled");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             SetStatusTransient("Something didn\u2019t work", Colors.Orange, 3000);
+            Log($"speak:error:{ex.GetType().Name}");
         }
         finally
         {
             IsSpeaking = false;
+            _speakLock.Release();
         }
     }
 
@@ -325,10 +344,12 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
 
     public void Stop()
     {
+        if (!IsSpeaking) return;
         _speakCts?.Cancel();
         _player.Stop();
         IsSpeaking = false;
         SetStatusTransient("Stopped", Colors.Gray, 1000);
+        Log("stop");
     }
 
     public void Dispose()
@@ -339,7 +360,9 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         _statusResetCts?.Dispose();
         _speakCts?.Cancel();
         _speakCts?.Dispose();
+        _speakLock.Dispose();
         _player.Dispose();
+        Log("dispose");
     }
 
     private void SetStatus(string text, Color color, bool retryHint = false)
@@ -373,6 +396,9 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         }
         return items[0];
     }
+
+    [Conditional("DEBUG")]
+    private static void Log(string evt) => Debug.WriteLine($"[Soundboard] {evt}");
 
     private void DismissWelcome()
     {
