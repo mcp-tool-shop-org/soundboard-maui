@@ -13,6 +13,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private readonly ISoundboardClient _client;
     private readonly IAudioPlayer _player;
     private CancellationTokenSource? _speakCts;
+    private CancellationTokenSource? _statusResetCts;
 
     private const string WelcomePrefKey = "HasSeenWelcome";
     private const string WelcomePhrase = "Welcome to the future of voice.";
@@ -230,15 +231,15 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
                 progress,
                 ct);
 
-            SetStatus("Done", Colors.Green);
+            SetStatusTransient("Done", Colors.Green, 1500);
         }
         catch (OperationCanceledException)
         {
-            SetStatus("Stopped", Colors.Gray);
+            SetStatusTransient("Stopped", Colors.Gray, 1000);
         }
         catch (Exception)
         {
-            SetStatus("Something didn\u2019t work", Colors.Orange);
+            SetStatusTransient("Something didn\u2019t work", Colors.Orange, 3000);
         }
         finally
         {
@@ -257,11 +258,13 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         _speakCts?.Cancel();
         _player.Stop();
         IsSpeaking = false;
-        SetStatus("Stopped", Colors.Gray);
+        SetStatusTransient("Stopped", Colors.Gray, 1000);
     }
 
     public void Dispose()
     {
+        _statusResetCts?.Cancel();
+        _statusResetCts?.Dispose();
         _speakCts?.Cancel();
         _speakCts?.Dispose();
         _player.Dispose();
@@ -269,9 +272,23 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
 
     private void SetStatus(string text, Color color, bool retryHint = false)
     {
+        _statusResetCts?.Cancel();
         Status = text;
         StatusColor = color;
         ShowRetryHint = retryHint;
+    }
+
+    private void SetStatusTransient(string text, Color color, int delayMs = 1500)
+    {
+        SetStatus(text, color);
+        _statusResetCts?.Cancel();
+        _statusResetCts = new CancellationTokenSource();
+        var token = _statusResetCts.Token;
+        _ = Task.Delay(delayMs, token).ContinueWith(_ =>
+        {
+            if (!token.IsCancellationRequested && IsConnected)
+                SetStatus("Connected", Colors.Green);
+        }, token, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.FromCurrentSynchronizationContext());
     }
 
     private void DismissWelcome()
