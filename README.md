@@ -61,13 +61,18 @@ src/
   Soundboard.Maui/           Reference client — MAUI desktop app
   soundboard-cli/            Reference client — console app
 
+examples/
+  Quickstart/                Zero-config "hello world" → WAV file
+  AgentTool/                 SDK as a callable tool in an agent pipeline
+
 tests/
   Soundboard.Client.Tests/         27 unit tests (no engine required)
-  Soundboard.IntegrationTests/     5 integration tests (FakeEngineServer)
+  Soundboard.IntegrationTests/     14 integration + contract tests
 
 docs/
   api.md                     SDK API reference v1.0
   api-contract.md            Engine <-> SDK protocol spec
+  compatibility.md           SDK-engine compatibility matrix & trust contract
   getting-started-sdk.md     SDK integration guide
   streaming-model.md         How audio streaming works
   error-model.md             Failure modes and handling
@@ -122,6 +127,13 @@ Yes. That is the point. The SDK has zero UI dependencies. Implement `IAudioPlaye
 **Where does the engine live?**
 In a separate repository: [voice-soundboard](https://github.com/mcp-tool-shop-org/voice-soundboard). This repo contains zero engine code.
 
+## Examples
+
+| Example | What it shows |
+|---|---|
+| [Quickstart](examples/Quickstart/) | Connect, speak, save WAV — 30 seconds |
+| [Agent Tool](examples/AgentTool/) | SDK as a callable tool in an AI agent pipeline |
+
 ## Documentation
 
 - [Getting started with the SDK](docs/getting-started-sdk.md)
@@ -129,11 +141,11 @@ In a separate repository: [voice-soundboard](https://github.com/mcp-tool-shop-or
 - [Error model](docs/error-model.md)
 - [API reference](docs/api.md)
 - [API contract](docs/api-contract.md)
+- [Compatibility & trust](docs/compatibility.md)
 - [Evaluation guide](docs/evaluation-guide.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## Related
 
 - [Engine repository](https://github.com/mcp-tool-shop-org/voice-soundboard)
-- [API contract](docs/api-contract.md)
 - [Known limitations](docs/known-limitations.md)

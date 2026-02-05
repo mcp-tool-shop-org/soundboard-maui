@@ -60,15 +60,23 @@ public sealed class SpeakEndToEndTests : IAsyncLifetime
         await using var client = new SoundboardClient(new SoundboardClientOptions { BaseUrl = _baseUrl });
 
         var chunks = new List<AudioChunk>();
-        var progress = new Progress<AudioChunk>(chunk => chunks.Add(chunk));
+        var tcs = new TaskCompletionSource();
+        var progress = new Progress<AudioChunk>(chunk =>
+        {
+            lock (chunks)
+            {
+                chunks.Add(chunk);
+                if (chunks.Count >= 5) tcs.TrySetResult();
+            }
+        });
 
         await client.SpeakAsync(
             new SpeakRequest("Hello from integration test", "assistant", "af_bella"),
             progress,
             CancellationToken.None);
 
-        // Give Progress<T> callbacks time to fire (they marshal to SynchronizationContext)
-        await Task.Delay(100);
+        // Wait for all Progress<T> callbacks to fire (they marshal asynchronously)
+        await Task.WhenAny(tcs.Task, Task.Delay(2000));
 
         Assert.Equal(5, chunks.Count);
         Assert.All(chunks, c =>
