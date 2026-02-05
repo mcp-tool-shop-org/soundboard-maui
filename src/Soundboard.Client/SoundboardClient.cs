@@ -17,6 +17,12 @@ public sealed class SoundboardClient : ISoundboardClient
         _wsUri = new Uri(baseUrl.Replace("http", "ws") + "/stream");
     }
 
+    internal SoundboardClient(HttpClient http, Uri wsUri)
+    {
+        _http = http;
+        _wsUri = wsUri;
+    }
+
     public async Task<EngineInfo> GetHealthAsync(CancellationToken ct = default)
     {
         return await _http.GetFromJsonAsync<EngineInfo>(
@@ -49,11 +55,12 @@ public sealed class SoundboardClient : ISoundboardClient
         using var ws = new ClientWebSocket();
         await ws.ConnectAsync(_wsUri, ct);
 
+        var requestId = request.ResolvedRequestId;
         var message = JsonSerializer.Serialize(new
         {
             type = "speak",
-            request_id = Guid.NewGuid().ToString(),
-            payload = request
+            request_id = requestId,
+            payload = new { text = request.Text, preset = request.Preset, voice = request.Voice }
         });
 
         await ws.SendAsync(
@@ -64,6 +71,7 @@ public sealed class SoundboardClient : ISoundboardClient
         );
 
         var buffer = new byte[8192];
+        using var msgStream = new MemoryStream();
 
         while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
         {
@@ -71,14 +79,36 @@ public sealed class SoundboardClient : ISoundboardClient
             if (result.MessageType == WebSocketMessageType.Close)
                 break;
 
-            var json = JsonDocument.Parse(new ReadOnlyMemory<byte>(buffer, 0, result.Count));
-            if (json.RootElement.GetProperty("type").GetString() == "audio_chunk")
+            msgStream.Write(buffer, 0, result.Count);
+
+            if (!result.EndOfMessage)
+                continue;
+
+            using var json = JsonDocument.Parse(msgStream.ToArray());
+            msgStream.SetLength(0);
+
+            var msgType = json.RootElement.GetProperty("type").GetString();
+
+            if (msgType == "audio_chunk")
             {
                 var payload = json.RootElement.GetProperty("payload");
                 var pcm = Convert.FromBase64String(payload.GetProperty("data").GetString()!);
                 var rate = payload.GetProperty("sample_rate").GetInt32();
 
                 audioProgress.Report(new AudioChunk(pcm, rate));
+            }
+            else if (msgType == "state")
+            {
+                var state = json.RootElement.GetProperty("payload")
+                    .GetProperty("state").GetString();
+                if (state == "finished")
+                    break;
+            }
+            else if (msgType == "error")
+            {
+                var errorMsg = json.RootElement.GetProperty("payload")
+                    .GetProperty("message").GetString() ?? "Engine error";
+                throw new InvalidOperationException(errorMsg);
             }
         }
     }
