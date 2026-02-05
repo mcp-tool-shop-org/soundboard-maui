@@ -26,9 +26,11 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private bool _isSpeaking;
     private bool _isOffline;
     private string _status = "Ready";
+    private Color _statusColor = Colors.Gray;
     private string _hintText = FirstRunHint;
     private bool _showHint = true;
     private bool _showWelcome;
+    private bool _showRetryHint;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -94,6 +96,18 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         private set => SetField(ref _status, value);
     }
 
+    public Color StatusColor
+    {
+        get => _statusColor;
+        private set => SetField(ref _statusColor, value);
+    }
+
+    public bool ShowRetryHint
+    {
+        get => _showRetryHint;
+        private set => SetField(ref _showRetryHint, value);
+    }
+
     public ObservableCollection<string> Presets { get; } = [];
     public ObservableCollection<string> Voices { get; } = [];
 
@@ -133,9 +147,9 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         try
         {
             IsOffline = false;
-            Status = "Connecting\u2026 this usually takes a second.";
+            SetStatus("Connecting\u2026", Colors.Gray);
             var health = await _client.GetHealthAsync(ct);
-            Status = "Connected";
+            SetStatus("Connected", Colors.Green);
 
             var presets = await _client.GetPresetsAsync(ct);
             Presets.Clear();
@@ -150,7 +164,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         catch (Exception)
         {
             IsOffline = true;
-            Status = "\u25cb Offline \u2014 tap to reconnect";
+            SetStatus("Offline", Colors.Red, retryHint: true);
         }
     }
 
@@ -163,7 +177,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         var ct = _speakCts.Token;
 
         IsSpeaking = true;
-        Status = "Streaming live\u2026";
+        SetStatus("Streaming live\u2026", Color.FromArgb("#2196F3"));
 
         try
         {
@@ -176,7 +190,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
                 if (firstChunk)
                 {
                     firstChunk = false;
-                    Status = "Streaming live\u2026";
+                    SetStatus("Streaming live\u2026", Color.FromArgb("#2196F3"));
                 }
             });
 
@@ -185,15 +199,15 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
                 progress,
                 ct);
 
-            Status = "Done";
+            SetStatus("Done", Colors.Green);
         }
         catch (OperationCanceledException)
         {
-            Status = "Stopped";
+            SetStatus("Stopped", Colors.Gray);
         }
         catch (Exception)
         {
-            Status = "Something didn\u2019t work. Try again in a moment.";
+            SetStatus("Something didn\u2019t work", Colors.Orange);
         }
         finally
         {
@@ -213,7 +227,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         _speakCts?.Cancel();
         _player.Stop();
         IsSpeaking = false;
-        Status = "Stopped";
+        SetStatus("Stopped", Colors.Gray);
     }
 
     public void Dispose()
@@ -221,6 +235,13 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         _speakCts?.Cancel();
         _speakCts?.Dispose();
         _player.Dispose();
+    }
+
+    private void SetStatus(string text, Color color, bool retryHint = false)
+    {
+        Status = text;
+        StatusColor = color;
+        ShowRetryHint = retryHint;
     }
 
     private void DismissWelcome()

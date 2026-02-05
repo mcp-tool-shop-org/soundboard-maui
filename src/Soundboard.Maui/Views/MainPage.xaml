@@ -12,15 +12,29 @@
             <VerticalStackLayout Spacing="14" Padding="20" MaximumWidthRequest="600">
 
                 <!-- Status -->
-                <Label
-                    Text="{Binding Status}"
-                    FontSize="12"
-                    TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}"
-                    HorizontalOptions="Start">
-                    <Label.GestureRecognizers>
-                        <TapGestureRecognizer Command="{Binding RetryConnectCommand}" />
-                    </Label.GestureRecognizers>
-                </Label>
+                <VerticalStackLayout Spacing="2" HorizontalOptions="Start">
+                    <HorizontalStackLayout Spacing="6">
+                        <Ellipse
+                            WidthRequest="8"
+                            HeightRequest="8"
+                            Fill="{Binding StatusColor}"
+                            VerticalOptions="Center" />
+                        <Label
+                            Text="{Binding Status}"
+                            FontSize="12"
+                            TextColor="{AppThemeBinding Light=#555555, Dark=#BBBBBB}" />
+                    </HorizontalStackLayout>
+                    <Label
+                        Text="Tap to reconnect"
+                        IsVisible="{Binding ShowRetryHint}"
+                        FontSize="11"
+                        TextColor="{AppThemeBinding Light=#999999, Dark=#777777}"
+                        TextDecorations="Underline">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding RetryConnectCommand}" />
+                        </Label.GestureRecognizers>
+                    </Label>
+                </VerticalStackLayout>
 
                 <!-- Text -->
                 <VerticalStackLayout Spacing="4">
