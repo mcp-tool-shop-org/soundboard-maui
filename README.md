@@ -67,7 +67,7 @@ examples/
 
 tests/
   Soundboard.Client.Tests/         27 unit tests (no engine required)
-  Soundboard.IntegrationTests/     14 integration + contract tests
+  Soundboard.IntegrationTests/     17 integration + contract tests
 
 docs/
   api.md                     SDK API reference v1.0
@@ -142,7 +142,12 @@ In a separate repository: [voice-soundboard](https://github.com/mcp-tool-shop-or
 - [API reference](docs/api.md)
 - [API contract](docs/api-contract.md)
 - [Compatibility & trust](docs/compatibility.md)
+- [Engine setup](docs/engine-setup.md)
+- [Upgrade & rollback playbook](docs/upgrade-playbook.md)
+- [Publishing the SDK](docs/publishing.md)
+- [Fresh install validation](docs/fresh-install.md)
 - [Evaluation guide](docs/evaluation-guide.md)
+- [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## Related

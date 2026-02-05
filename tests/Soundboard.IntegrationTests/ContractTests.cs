@@ -159,6 +159,39 @@ public sealed class ContractTests : IAsyncLifetime
         Assert.False(string.IsNullOrWhiteSpace(health.ApiVersion));
     }
 
+    [Fact]
+    public async Task Health_MatchingApiVersion_Succeeds()
+    {
+        // Contract §7: Matching api_version proceeds normally
+        await using var client = new SoundboardClient(new SoundboardClientOptions { BaseUrl = _baseUrl });
+        var health = await client.GetHealthAsync();
+
+        Assert.Equal(SoundboardClient.SdkApiVersion, health.ApiVersion);
+    }
+
+    [Fact]
+    public async Task Health_MismatchedApiVersion_StillSucceeds()
+    {
+        // Contract §7: Mismatched version proceeds (forward-compatible), does not throw
+        await using var mismatchEngine = new VersionMismatchServer();
+        var url = await mismatchEngine.StartAsync();
+
+        await using var client = new SoundboardClient(new SoundboardClientOptions { BaseUrl = url });
+        var health = await client.GetHealthAsync();
+
+        Assert.Equal("99", health.ApiVersion);
+        Assert.NotEqual(SoundboardClient.SdkApiVersion, health.ApiVersion);
+
+        await mismatchEngine.DisposeAsync();
+    }
+
+    [Fact]
+    public void SdkApiVersion_IsExposed()
+    {
+        // SDK declares its expected API version as a public constant
+        Assert.False(string.IsNullOrWhiteSpace(SoundboardClient.SdkApiVersion));
+    }
+
     // --- SDK guarantees ---
 
     [Fact]
@@ -238,6 +271,42 @@ internal sealed class ErrorEngineServer : IAsyncDisposable
             var bytes = Encoding.UTF8.GetBytes(json);
             await ws.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
         });
+    }
+
+    public async Task<string> StartAsync()
+    {
+        await _app.StartAsync();
+        return _app.Urls.First();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _app.StopAsync();
+        await _app.DisposeAsync();
+    }
+}
+
+/// <summary>
+/// Engine server that reports a future API version to test forward compatibility.
+/// </summary>
+internal sealed class VersionMismatchServer : IAsyncDisposable
+{
+    private readonly WebApplication _app;
+
+    public VersionMismatchServer()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Logging.ClearProviders();
+
+        _app = builder.Build();
+
+        _app.MapGet("/api/health", () => Results.Json(new
+        {
+            status = "ready",
+            engineVersion = "future-2.0",
+            apiVersion = "99"
+        }));
     }
 
     public async Task<string> StartAsync()

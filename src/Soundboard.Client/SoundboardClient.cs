@@ -14,6 +14,9 @@ namespace Soundboard.Client;
 /// </summary>
 public sealed class SoundboardClient : ISoundboardClient
 {
+    /// <summary>The API contract version this SDK was built against.</summary>
+    public const string SdkApiVersion = "1";
+
     private readonly HttpClient _http;
     private readonly SoundboardClientOptions _options;
     private readonly ILogger _logger;
@@ -44,10 +47,20 @@ public sealed class SoundboardClient : ISoundboardClient
     public async Task<EngineInfo> GetHealthAsync(CancellationToken ct = default)
     {
         _logger.LogDebug("GET /api/health");
-        return await _http.GetFromJsonAsync<EngineInfo>(
+        var health = await _http.GetFromJsonAsync<EngineInfo>(
             "/api/health",
             ct
         ) ?? throw new InvalidOperationException("Invalid health response");
+
+        if (!string.IsNullOrEmpty(health.ApiVersion) && health.ApiVersion != SdkApiVersion)
+        {
+            _logger.LogWarning(
+                "API version mismatch: SDK expects {SdkVersion}, engine reports {EngineVersion}. " +
+                "Proceeding, but some features may not work as expected.",
+                SdkApiVersion, health.ApiVersion);
+        }
+
+        return health;
     }
 
     /// <inheritdoc />
