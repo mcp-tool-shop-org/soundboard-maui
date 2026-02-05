@@ -19,6 +19,8 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private string? _selectedVoice;
     private bool _isSpeaking;
     private string _status = "Ready";
+    private string _hintText = "Type anything above, pick a style, and hit Speak.";
+    private bool _showHint = true;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -40,7 +42,10 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         set
         {
             if (SetField(ref _text, value))
+            {
+                ShowHint = string.IsNullOrWhiteSpace(value);
                 RefreshCommands();
+            }
         }
     }
 
@@ -74,6 +79,18 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
 
     public ObservableCollection<string> Presets { get; } = [];
     public ObservableCollection<string> Voices { get; } = [];
+
+    public string HintText
+    {
+        get => _hintText;
+        private set => SetField(ref _hintText, value);
+    }
+
+    public bool ShowHint
+    {
+        get => _showHint;
+        private set => SetField(ref _showHint, value);
+    }
 
     public bool CanSpeak => !IsSpeaking && !string.IsNullOrWhiteSpace(Text);
 

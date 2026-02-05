@@ -5,48 +5,82 @@
     x:Class="Soundboard.Maui.Views.MainPage"
     Title="Soundboard">
 
-    <VerticalStackLayout Spacing="12" Padding="16">
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="20" MaximumWidthRequest="600">
 
-        <!-- Engine status -->
-        <Label
-            Text="{Binding Status}"
-            FontAttributes="Bold"
-            FontSize="14" />
+            <!-- Engine status -->
+            <Label
+                Text="{Binding Status}"
+                FontSize="12"
+                TextColor="{AppThemeBinding Light=Gray, Dark=LightGray}"
+                HorizontalOptions="Start" />
 
-        <!-- Preset / Voice -->
-        <HorizontalStackLayout Spacing="12">
-            <Picker
-                Title="Preset"
-                ItemsSource="{Binding Presets}"
-                SelectedItem="{Binding SelectedPreset}"
-                WidthRequest="200" />
+            <!-- 1. Text input (dominant — the thing they came here to do) -->
+            <VerticalStackLayout Spacing="4">
+                <Label
+                    Text="What should it say?"
+                    FontSize="16"
+                    FontAttributes="Bold" />
+                <Editor
+                    Placeholder="Try: Hello, welcome to the future of speech."
+                    Text="{Binding Text}"
+                    AutoSize="TextChanges"
+                    HeightRequest="120"
+                    FontSize="15" />
+            </VerticalStackLayout>
 
-            <Picker
-                Title="Voice"
-                ItemsSource="{Binding Voices}"
-                SelectedItem="{Binding SelectedVoice}"
-                WidthRequest="200" />
-        </HorizontalStackLayout>
+            <!-- Hint (visible when text is empty, hides once they type) -->
+            <Label
+                Text="{Binding HintText}"
+                IsVisible="{Binding ShowHint}"
+                FontSize="13"
+                TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}"
+                FontAttributes="Italic" />
 
-        <!-- Text input -->
-        <Editor
-            Placeholder="Enter text to speak"
-            Text="{Binding Text}"
-            AutoSize="TextChanges"
-            HeightRequest="120" />
+            <!-- 2. Pickers (secondary — refine, not decide) -->
+            <VerticalStackLayout Spacing="4">
+                <Label
+                    Text="How should it sound?"
+                    FontSize="14"
+                    TextColor="{AppThemeBinding Light=#444444, Dark=#CCCCCC}" />
+                <HorizontalStackLayout Spacing="12">
+                    <Picker
+                        Title="Preset"
+                        ItemsSource="{Binding Presets}"
+                        SelectedItem="{Binding SelectedPreset}"
+                        WidthRequest="200" />
 
-        <!-- Controls -->
-        <HorizontalStackLayout Spacing="12">
+                    <Picker
+                        Title="Voice"
+                        ItemsSource="{Binding Voices}"
+                        SelectedItem="{Binding SelectedVoice}"
+                        WidthRequest="200" />
+                </HorizontalStackLayout>
+            </VerticalStackLayout>
+
+            <!-- 3. Actions (Speak is primary, Stop is secondary) -->
             <Button
                 Text="Speak"
                 Command="{Binding SpeakCommand}"
-                WidthRequest="120" />
+                FontSize="16"
+                FontAttributes="Bold"
+                HeightRequest="48"
+                BackgroundColor="{AppThemeBinding Light=#512BD4, Dark=#7C4DFF}"
+                TextColor="White"
+                HorizontalOptions="Fill" />
 
             <Button
                 Text="Stop"
                 Command="{Binding StopCommand}"
-                WidthRequest="120" />
-        </HorizontalStackLayout>
+                FontSize="14"
+                HeightRequest="40"
+                BackgroundColor="Transparent"
+                BorderColor="{AppThemeBinding Light=#CCCCCC, Dark=#555555}"
+                BorderWidth="1"
+                TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}"
+                HorizontalOptions="Fill"
+                IsVisible="{Binding IsSpeaking}" />
 
-    </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
