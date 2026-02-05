@@ -40,6 +40,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private bool _showHint = true;
     private bool _showWelcome;
     private bool _showRetryHint;
+    private bool _pickersLoading = true;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -131,6 +132,12 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         private set => SetField(ref _showRetryHint, value);
     }
 
+    public bool PickersLoading
+    {
+        get => _pickersLoading;
+        private set => SetField(ref _pickersLoading, value);
+    }
+
     public ObservableCollection<string> Presets { get; } = [];
     public ObservableCollection<string> Voices { get; } = [];
 
@@ -189,6 +196,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         {
             IsOffline = false;
             IsConnected = false;
+            PickersLoading = true;
             SetStatus("Connecting\u2026", Colors.Gray);
             var health = await _client.GetHealthAsync(ct);
             IsConnected = true;
@@ -197,12 +205,14 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
             var presets = await _client.GetPresetsAsync(ct);
             Presets.Clear();
             foreach (var p in presets) Presets.Add(p);
-            if (Presets.Count > 0) SelectedPreset = Presets[0];
+            SelectedPreset = PickBestDefault(Presets, "expressive", "conversational", "narrator");
 
             var voices = await _client.GetVoicesAsync(ct);
             Voices.Clear();
             foreach (var v in voices) Voices.Add(v);
-            if (Voices.Count > 0) SelectedVoice = Voices[0];
+            SelectedVoice = PickBestDefault(Voices, "default", "neutral");
+
+            PickersLoading = false;
         }
         catch (Exception)
         {
@@ -301,6 +311,17 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
             if (!token.IsCancellationRequested && IsConnected)
                 SetStatus("Connected", Colors.Green);
         }, token, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    private static string? PickBestDefault(ObservableCollection<string> items, params string[] preferred)
+    {
+        if (items.Count == 0) return null;
+        foreach (var pref in preferred)
+        {
+            var match = items.FirstOrDefault(i => i.Contains(pref, StringComparison.OrdinalIgnoreCase));
+            if (match is not null) return match;
+        }
+        return items[0];
     }
 
     private void DismissWelcome()

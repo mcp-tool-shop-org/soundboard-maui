@@ -104,9 +104,10 @@
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Style" FontSize="14" FontAttributes="Bold" />
                     <Picker
-                        Title="Style"
+                        Title="{Binding PickersLoading, Converter={StaticResource LoadingTitleConverter}, ConverterParameter=Style}"
                         ItemsSource="{Binding Presets}"
                         SelectedItem="{Binding SelectedPreset}"
+                        IsEnabled="{Binding PickersLoading, Converter={StaticResource InvertBoolConverter}}"
                         HorizontalOptions="Fill" />
                 </VerticalStackLayout>
 
@@ -114,9 +115,10 @@
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Voice" FontSize="14" FontAttributes="Bold" />
                     <Picker
-                        Title="Voice"
+                        Title="{Binding PickersLoading, Converter={StaticResource LoadingTitleConverter}, ConverterParameter=Voice}"
                         ItemsSource="{Binding Voices}"
                         SelectedItem="{Binding SelectedVoice}"
+                        IsEnabled="{Binding PickersLoading, Converter={StaticResource InvertBoolConverter}}"
                         HorizontalOptions="Fill" />
                 </VerticalStackLayout>
 

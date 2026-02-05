@@ -7,6 +7,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <converters:BoolToOpacityConverter x:Key="WelcomeOpacityConverter" TrueOpacity="0.3" FalseOpacity="1.0" />
+            <converters:InvertBoolConverter x:Key="InvertBoolConverter" />
+            <converters:LoadingTitleConverter x:Key="LoadingTitleConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
