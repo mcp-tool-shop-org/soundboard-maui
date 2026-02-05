@@ -27,6 +27,14 @@ public class OptionsTests
     }
 
     [Fact]
+    public void DefaultOptions_WsReceiveTimeout_Is30Seconds()
+    {
+        var opts = new SoundboardClientOptions();
+
+        Assert.Equal(TimeSpan.FromSeconds(30), opts.WebSocketReceiveTimeout);
+    }
+
+    [Fact]
     public void WsUri_DerivedFromBaseUrl()
     {
         var opts = new SoundboardClientOptions { BaseUrl = "http://192.168.1.50:9000" };
@@ -62,6 +70,14 @@ public class OptionsTests
     {
         var opts = new SoundboardClientOptions { BaseUrl = "http://10.0.0.1:5000" };
         var client = new SoundboardClient(opts);
+        Assert.NotNull(client);
+    }
+
+    [Fact]
+    public void PublicConstructor_AcceptsInjectedHttpClient()
+    {
+        var http = new HttpClient();
+        var client = new SoundboardClient(httpClient: http);
         Assert.NotNull(client);
     }
 }

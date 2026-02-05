@@ -14,15 +14,16 @@ public sealed class SoundboardClient : ISoundboardClient
     private readonly SoundboardClientOptions _options;
     private readonly ILogger _logger;
 
-    public SoundboardClient(SoundboardClientOptions? options = null, ILogger? logger = null)
+    public SoundboardClient(
+        SoundboardClientOptions? options = null,
+        HttpClient? httpClient = null,
+        ILogger? logger = null)
     {
         _options = options ?? new SoundboardClientOptions();
         _logger = logger ?? NullLogger.Instance;
-        _http = new HttpClient
-        {
-            BaseAddress = new Uri(_options.BaseUrl),
-            Timeout = _options.HttpTimeout
-        };
+        _http = httpClient ?? new HttpClient();
+        _http.BaseAddress = new Uri(_options.BaseUrl);
+        _http.Timeout = _options.HttpTimeout;
         _logger.LogDebug("SoundboardClient created: base={BaseUrl}, httpTimeout={Timeout}s",
             _options.BaseUrl, _options.HttpTimeout.TotalSeconds);
     }
@@ -102,7 +103,10 @@ public sealed class SoundboardClient : ISoundboardClient
 
         while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
         {
-            var result = await ws.ReceiveAsync(buffer, ct);
+            using var receiveCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            receiveCts.CancelAfter(_options.WebSocketReceiveTimeout);
+
+            var result = await ws.ReceiveAsync(buffer, receiveCts.Token);
             if (result.MessageType == WebSocketMessageType.Close)
             {
                 _logger.LogDebug("WebSocket closed by server");

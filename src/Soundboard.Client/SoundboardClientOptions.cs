@@ -12,5 +12,7 @@ public sealed record SoundboardClientOptions
 
     public TimeSpan WebSocketConnectTimeout { get; init; } = TimeSpan.FromSeconds(5);
 
+    public TimeSpan WebSocketReceiveTimeout { get; init; } = TimeSpan.FromSeconds(30);
+
     internal Uri WsUri => new(BaseUrl.Replace("http", "ws") + "/stream");
 }
