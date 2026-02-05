@@ -1,8 +1,13 @@
 # Engine ↔ MAUI API Contract
 
-Version: 1.0
-Status: Proposed
-Resolves: [Issue #1](https://github.com/mcp-tool-shop-org/soundboard-maui/issues/1)
+| Field | Value |
+|-------|-------|
+| Version | 1.0 |
+| Status | Proposed (pending engine approval) |
+| Owner | Engine + MAUI |
+| Compatibility target | API v1.0 |
+| Resolves | [soundboard-maui#1](https://github.com/mcp-tool-shop-org/soundboard-maui/issues/1) |
+| Engine tracking | [voice-soundboard#10](https://github.com/mcp-tool-shop-org/voice-soundboard/issues/10) |
 
 ---
 
@@ -297,3 +302,11 @@ These may be added in future contract versions:
 - Preset creation from MAUI
 
 Each extension requires a contract version bump and agreement from both sides.
+
+---
+
+## Changelog
+
+| Version | Date | Change |
+|---------|------|--------|
+| 1.0 | 2026-02-05 | Initial contract proposed |
