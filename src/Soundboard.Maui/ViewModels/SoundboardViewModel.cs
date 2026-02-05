@@ -14,6 +14,9 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private readonly IAudioPlayer _player;
     private CancellationTokenSource? _speakCts;
 
+    private const string WelcomePrefKey = "HasSeenWelcome";
+    private const string WelcomePhrase = "Welcome to the future of voice.";
+
     private string _text = "";
     private string? _selectedPreset;
     private string? _selectedVoice;
@@ -21,6 +24,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private string _status = "Ready";
     private string _hintText = "Type anything above, pick a style, and hit Speak.";
     private bool _showHint = true;
+    private bool _showWelcome;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -29,12 +33,18 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         _client = client;
         _player = player;
 
+        _showWelcome = !Preferences.Get(WelcomePrefKey, false);
+
         SpeakCommand = new Command(async () => await SpeakAsync(), () => CanSpeak);
         StopCommand = new Command(() => Stop(), () => IsSpeaking);
+        WelcomeSpeakCommand = new Command(async () => await WelcomeSpeakAsync());
+        DismissWelcomeCommand = new Command(DismissWelcome);
     }
 
     public ICommand SpeakCommand { get; }
     public ICommand StopCommand { get; }
+    public ICommand WelcomeSpeakCommand { get; }
+    public ICommand DismissWelcomeCommand { get; }
 
     public string Text
     {
@@ -90,6 +100,12 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     {
         get => _showHint;
         private set => SetField(ref _showHint, value);
+    }
+
+    public bool ShowWelcome
+    {
+        get => _showWelcome;
+        private set => SetField(ref _showWelcome, value);
     }
 
     public bool CanSpeak => !IsSpeaking && !string.IsNullOrWhiteSpace(Text);
@@ -165,6 +181,13 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    public async Task WelcomeSpeakAsync()
+    {
+        DismissWelcome();
+        Text = WelcomePhrase;
+        await SpeakAsync();
+    }
+
     public void Stop()
     {
         _speakCts?.Cancel();
@@ -178,6 +201,12 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         _speakCts?.Cancel();
         _speakCts?.Dispose();
         _player.Dispose();
+    }
+
+    private void DismissWelcome()
+    {
+        ShowWelcome = false;
+        Preferences.Set(WelcomePrefKey, true);
     }
 
     private void RefreshCommands()
