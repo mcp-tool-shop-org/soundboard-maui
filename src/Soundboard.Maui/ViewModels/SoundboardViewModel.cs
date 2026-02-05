@@ -40,7 +40,17 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         _player = player;
 
         _showWelcome = !Preferences.Get(WelcomePrefKey, false);
-        _hintText = _showWelcome ? FirstRunHint : ReturningHint;
+
+        if (_showWelcome)
+        {
+            _text = WelcomePhrase;   // pre-fill so Speak is enabled immediately
+            _showHint = false;       // don't show hint over pre-filled text
+            _hintText = FirstRunHint;
+        }
+        else
+        {
+            _hintText = ReturningHint;
+        }
 
         SpeakCommand = new Command(async () => await SpeakAsync(), () => CanSpeak);
         StopCommand = new Command(() => Stop(), () => IsSpeaking);
@@ -218,7 +228,6 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     public async Task WelcomeSpeakAsync()
     {
         DismissWelcome();
-        Text = WelcomePhrase;
         await SpeakAsync();
     }
 
