@@ -14,6 +14,8 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private readonly IAudioPlayer _player;
     private CancellationTokenSource? _speakCts;
     private CancellationTokenSource? _statusResetCts;
+    private CancellationTokenSource? _reconnectCts;
+    private static readonly int[] ReconnectDelaysMs = [1000, 2000, 5000, 10000];
 
     private const string WelcomePrefKey = "HasSeenWelcome";
     private const string LastTextKey = "LastText";
@@ -71,7 +73,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         StopCommand = new Command(() => Stop(), () => IsSpeaking);
         WelcomeSpeakCommand = new Command(async () => await WelcomeSpeakAsync());
         DismissWelcomeCommand = new Command(DismissWelcome);
-        RetryConnectCommand = new Command(async () => await LoadAsync(), () => IsOffline);
+        RetryConnectCommand = new Command(async () => { _reconnectCts?.Cancel(); await LoadAsync(); }, () => IsOffline);
         SetExampleCommand = new Command<string>(phrase => Text = phrase);
     }
 
@@ -206,39 +208,65 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
 
     public async Task LoadAsync(CancellationToken ct = default)
     {
-        try
+        _reconnectCts?.Cancel();
+        _reconnectCts = new CancellationTokenSource();
+        var reconnectToken = _reconnectCts.Token;
+
+        for (var attempt = 0; ; attempt++)
         {
-            IsOffline = false;
-            IsConnected = false;
-            PickersLoading = true;
-            SetStatus("Connecting\u2026", Colors.Gray);
-            var health = await _client.GetHealthAsync(ct);
-            IsConnected = true;
-            SetStatus("Connected", Colors.Green);
+            try
+            {
+                IsOffline = false;
+                IsConnected = false;
+                PickersLoading = true;
+                SetStatus(attempt == 0 ? "Connecting\u2026" : "Reconnecting\u2026", Colors.Gray);
 
-            var presets = await _client.GetPresetsAsync(ct);
-            Presets.Clear();
-            foreach (var p in presets) Presets.Add(p);
-            var savedStyle = Preferences.Get(LastStyleKey, "");
-            SelectedPreset = (!string.IsNullOrEmpty(savedStyle) && Presets.Contains(savedStyle))
-                ? savedStyle
-                : PickBestDefault(Presets, "expressive", "conversational", "narrator");
+                var health = await _client.GetHealthAsync(ct);
+                IsConnected = true;
+                SetStatus("Connected", Colors.Green);
 
-            var voices = await _client.GetVoicesAsync(ct);
-            Voices.Clear();
-            foreach (var v in voices) Voices.Add(v);
-            var savedVoice = Preferences.Get(LastVoiceKey, "");
-            SelectedVoice = (!string.IsNullOrEmpty(savedVoice) && Voices.Contains(savedVoice))
-                ? savedVoice
-                : PickBestDefault(Voices, "default", "neutral");
+                var presets = await _client.GetPresetsAsync(ct);
+                Presets.Clear();
+                foreach (var p in presets) Presets.Add(p);
+                var savedStyle = Preferences.Get(LastStyleKey, "");
+                SelectedPreset = (!string.IsNullOrEmpty(savedStyle) && Presets.Contains(savedStyle))
+                    ? savedStyle
+                    : PickBestDefault(Presets, "expressive", "conversational", "narrator");
 
-            PickersLoading = false;
-        }
-        catch (Exception)
-        {
-            IsOffline = true;
-            IsConnected = false;
-            SetStatus("Disconnected", Colors.Red, retryHint: true);
+                var voices = await _client.GetVoicesAsync(ct);
+                Voices.Clear();
+                foreach (var v in voices) Voices.Add(v);
+                var savedVoice = Preferences.Get(LastVoiceKey, "");
+                SelectedVoice = (!string.IsNullOrEmpty(savedVoice) && Voices.Contains(savedVoice))
+                    ? savedVoice
+                    : PickBestDefault(Voices, "default", "neutral");
+
+                PickersLoading = false;
+                return; // connected successfully
+            }
+            catch (Exception) when (!ct.IsCancellationRequested)
+            {
+                IsOffline = true;
+                IsConnected = false;
+                var delayMs = ReconnectDelaysMs[Math.Min(attempt, ReconnectDelaysMs.Length - 1)];
+                SetStatus("Disconnected", Colors.Red, retryHint: true);
+
+                try
+                {
+                    await Task.Delay(delayMs, reconnectToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    return; // manual retry or dispose cancelled the backoff
+                }
+            }
+            catch
+            {
+                IsOffline = true;
+                IsConnected = false;
+                SetStatus("Disconnected", Colors.Red, retryHint: true);
+                return;
+            }
         }
     }
 
@@ -305,6 +333,8 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
 
     public void Dispose()
     {
+        _reconnectCts?.Cancel();
+        _reconnectCts?.Dispose();
         _statusResetCts?.Cancel();
         _statusResetCts?.Dispose();
         _speakCts?.Cancel();
