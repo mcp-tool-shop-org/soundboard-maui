@@ -60,34 +60,36 @@
                 </VerticalStackLayout>
 
                 <!-- Actions -->
-                <Button
-                    Text="Speak"
-                    Command="{Binding SpeakCommand}"
-                    FontSize="16"
-                    FontAttributes="Bold"
-                    HeightRequest="48"
-                    BackgroundColor="{AppThemeBinding Light=#512BD4, Dark=#7C4DFF}"
-                    TextColor="White"
-                    HorizontalOptions="Fill" />
+                <Grid ColumnDefinitions="2*,*" ColumnSpacing="10">
+                    <Button
+                        Grid.Column="0"
+                        Text="&#x25B6;  Speak"
+                        Command="{Binding SpeakCommand}"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        HeightRequest="48"
+                        BackgroundColor="{AppThemeBinding Light=#512BD4, Dark=#7C4DFF}"
+                        TextColor="White"
+                        HorizontalOptions="Fill" />
+                    <Button
+                        Grid.Column="1"
+                        Text="&#x25A0;  Stop"
+                        Command="{Binding StopCommand}"
+                        FontSize="14"
+                        HeightRequest="48"
+                        BackgroundColor="Transparent"
+                        BorderColor="{AppThemeBinding Light=#CCCCCC, Dark=#555555}"
+                        BorderWidth="1"
+                        TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}"
+                        HorizontalOptions="Fill" />
+                </Grid>
 
                 <Label
-                    Text="Add a line of text to hear it spoken."
+                    Text="Type some text above, then press Speak."
                     IsVisible="{Binding ShowSpeakHint}"
                     FontSize="12"
                     TextColor="{AppThemeBinding Light=#999999, Dark=#777777}"
                     HorizontalTextAlignment="Center" />
-
-                <Button
-                    Text="Stop"
-                    Command="{Binding StopCommand}"
-                    FontSize="14"
-                    HeightRequest="40"
-                    BackgroundColor="Transparent"
-                    BorderColor="{AppThemeBinding Light=#CCCCCC, Dark=#555555}"
-                    BorderWidth="1"
-                    TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}"
-                    HorizontalOptions="Fill"
-                    IsVisible="{Binding IsSpeaking}" />
 
             </VerticalStackLayout>
         </ScrollView>
