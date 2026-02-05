@@ -17,13 +17,16 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private const string WelcomePrefKey = "HasSeenWelcome";
     private const string WelcomePhrase = "Welcome to the future of voice.";
 
+    private const string FirstRunHint = "Type a line \u2014 anything works.";
+    private const string ReturningHint = "Try changing the preset for a different delivery style.";
+
     private string _text = "";
     private string? _selectedPreset;
     private string? _selectedVoice;
     private bool _isSpeaking;
     private bool _isOffline;
     private string _status = "Ready";
-    private string _hintText = "Type a line \u2014 anything works.";
+    private string _hintText = FirstRunHint;
     private bool _showHint = true;
     private bool _showWelcome;
 
@@ -35,6 +38,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         _player = player;
 
         _showWelcome = !Preferences.Get(WelcomePrefKey, false);
+        _hintText = _showWelcome ? FirstRunHint : ReturningHint;
 
         SpeakCommand = new Command(async () => await SpeakAsync(), () => CanSpeak);
         StopCommand = new Command(() => Stop(), () => IsSpeaking);
