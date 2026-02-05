@@ -9,9 +9,9 @@
 
         <!-- Main UI (always present, dimmed when welcome is showing) -->
         <ScrollView Opacity="{Binding ShowWelcome, Converter={StaticResource WelcomeOpacityConverter}}">
-            <VerticalStackLayout Spacing="16" Padding="20" MaximumWidthRequest="600">
+            <VerticalStackLayout Spacing="14" Padding="20" MaximumWidthRequest="600">
 
-                <!-- Engine status (tappable when offline to retry) -->
+                <!-- Status -->
                 <Label
                     Text="{Binding Status}"
                     FontSize="12"
@@ -22,45 +22,44 @@
                     </Label.GestureRecognizers>
                 </Label>
 
-                <!-- 1. Text input -->
+                <!-- Text -->
                 <VerticalStackLayout Spacing="4">
-                    <Label
-                        Text="Text"
-                        FontSize="16"
-                        FontAttributes="Bold" />
+                    <Label Text="Text" FontSize="14" FontAttributes="Bold" />
                     <Editor
                         Placeholder="Type anything you want to hear spoken..."
                         Text="{Binding Text}"
                         AutoSize="TextChanges"
                         HeightRequest="120"
                         FontSize="15" />
+                    <Label
+                        Text="{Binding HintText}"
+                        IsVisible="{Binding ShowHint}"
+                        FontSize="12"
+                        TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}"
+                        FontAttributes="Italic" />
                 </VerticalStackLayout>
 
-                <!-- Hint -->
-                <Label
-                    Text="{Binding HintText}"
-                    IsVisible="{Binding ShowHint}"
-                    FontSize="13"
-                    TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}"
-                    FontAttributes="Italic" />
-
-                <!-- 2. Pickers -->
+                <!-- Style -->
                 <VerticalStackLayout Spacing="4">
-                    <HorizontalStackLayout Spacing="12">
-                        <Picker
-                            Title="Style"
-                            ItemsSource="{Binding Presets}"
-                            SelectedItem="{Binding SelectedPreset}"
-                            WidthRequest="200" />
-                        <Picker
-                            Title="Voice"
-                            ItemsSource="{Binding Voices}"
-                            SelectedItem="{Binding SelectedVoice}"
-                            WidthRequest="200" />
-                    </HorizontalStackLayout>
+                    <Label Text="Style" FontSize="14" FontAttributes="Bold" />
+                    <Picker
+                        Title="Style"
+                        ItemsSource="{Binding Presets}"
+                        SelectedItem="{Binding SelectedPreset}"
+                        HorizontalOptions="Fill" />
                 </VerticalStackLayout>
 
-                <!-- 3. Actions -->
+                <!-- Voice -->
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Voice" FontSize="14" FontAttributes="Bold" />
+                    <Picker
+                        Title="Voice"
+                        ItemsSource="{Binding Voices}"
+                        SelectedItem="{Binding SelectedVoice}"
+                        HorizontalOptions="Fill" />
+                </VerticalStackLayout>
+
+                <!-- Actions -->
                 <Button
                     Text="Speak"
                     Command="{Binding SpeakCommand}"
@@ -71,7 +70,6 @@
                     TextColor="White"
                     HorizontalOptions="Fill" />
 
-                <!-- Why Speak is disabled -->
                 <Label
                     Text="Add a line of text to hear it spoken."
                     IsVisible="{Binding ShowSpeakHint}"
