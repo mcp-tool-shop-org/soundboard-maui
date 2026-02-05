@@ -1,5 +1,7 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 using Soundboard.Client;
 using Soundboard.Client.Models;
 using Soundboard.Maui.Audio;
@@ -13,12 +15,10 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private CancellationTokenSource? _speakCts;
 
     private string _text = "";
-    private string _selectedPreset = "assistant";
-    private string _selectedVoice = "default";
+    private string? _selectedPreset;
+    private string? _selectedVoice;
     private bool _isSpeaking;
     private string _status = "Ready";
-    private IReadOnlyList<string> _presets = [];
-    private IReadOnlyList<string> _voices = [];
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -26,21 +26,31 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     {
         _client = client;
         _player = player;
+
+        SpeakCommand = new Command(async () => await SpeakAsync(), () => CanSpeak);
+        StopCommand = new Command(() => Stop(), () => IsSpeaking);
     }
+
+    public ICommand SpeakCommand { get; }
+    public ICommand StopCommand { get; }
 
     public string Text
     {
         get => _text;
-        set => SetField(ref _text, value);
+        set
+        {
+            if (SetField(ref _text, value))
+                RefreshCommands();
+        }
     }
 
-    public string SelectedPreset
+    public string? SelectedPreset
     {
         get => _selectedPreset;
         set => SetField(ref _selectedPreset, value);
     }
 
-    public string SelectedVoice
+    public string? SelectedVoice
     {
         get => _selectedVoice;
         set => SetField(ref _selectedVoice, value);
@@ -49,7 +59,11 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     public bool IsSpeaking
     {
         get => _isSpeaking;
-        private set => SetField(ref _isSpeaking, value);
+        private set
+        {
+            if (SetField(ref _isSpeaking, value))
+                RefreshCommands();
+        }
     }
 
     public string Status
@@ -58,28 +72,33 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         private set => SetField(ref _status, value);
     }
 
-    public IReadOnlyList<string> Presets
-    {
-        get => _presets;
-        private set => SetField(ref _presets, value);
-    }
-
-    public IReadOnlyList<string> Voices
-    {
-        get => _voices;
-        private set => SetField(ref _voices, value);
-    }
+    public ObservableCollection<string> Presets { get; } = [];
+    public ObservableCollection<string> Voices { get; } = [];
 
     public bool CanSpeak => !IsSpeaking && !string.IsNullOrWhiteSpace(Text);
 
     public async Task LoadAsync(CancellationToken ct = default)
     {
-        Status = "Connecting...";
-        var health = await _client.GetHealthAsync(ct);
-        Status = $"Engine v{health.EngineVersion} (API {health.ApiVersion})";
+        try
+        {
+            Status = "Connecting...";
+            var health = await _client.GetHealthAsync(ct);
+            Status = $"Engine v{health.EngineVersion} (API {health.ApiVersion})";
 
-        Presets = await _client.GetPresetsAsync(ct);
-        Voices = await _client.GetVoicesAsync(ct);
+            var presets = await _client.GetPresetsAsync(ct);
+            Presets.Clear();
+            foreach (var p in presets) Presets.Add(p);
+            if (Presets.Count > 0) SelectedPreset = Presets[0];
+
+            var voices = await _client.GetVoicesAsync(ct);
+            Voices.Clear();
+            foreach (var v in voices) Voices.Add(v);
+            if (Voices.Count > 0) SelectedVoice = Voices[0];
+        }
+        catch (Exception ex)
+        {
+            Status = $"Offline: {ex.Message}";
+        }
     }
 
     public async Task SpeakAsync()
@@ -100,7 +119,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
             var progress = new Progress<AudioChunk>(chunk => _player.Feed(chunk));
 
             await _client.SpeakAsync(
-                new SpeakRequest(Text, SelectedPreset, SelectedVoice),
+                new SpeakRequest(Text, SelectedPreset ?? "assistant", SelectedVoice ?? "default"),
                 progress,
                 ct);
 
@@ -135,14 +154,19 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         _player.Dispose();
     }
 
+    private void RefreshCommands()
+    {
+        (SpeakCommand as Command)?.ChangeCanExecute();
+        (StopCommand as Command)?.ChangeCanExecute();
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSpeak)));
+    }
+
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value))
             return false;
         field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        if (name == nameof(Text) || name == nameof(IsSpeaking))
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSpeak)));
         return true;
     }
 }

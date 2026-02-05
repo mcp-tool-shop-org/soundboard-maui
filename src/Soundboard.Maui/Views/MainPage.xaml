@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="Soundboard.Maui.Views.MainPage"
+    Title="Soundboard">
+
+    <VerticalStackLayout Spacing="12" Padding="16">
+
+        <!-- Engine status -->
+        <Label
+            Text="{Binding Status}"
+            FontAttributes="Bold"
+            FontSize="14" />
+
+        <!-- Preset / Voice -->
+        <HorizontalStackLayout Spacing="12">
+            <Picker
+                Title="Preset"
+                ItemsSource="{Binding Presets}"
+                SelectedItem="{Binding SelectedPreset}"
+                WidthRequest="200" />
+
+            <Picker
+                Title="Voice"
+                ItemsSource="{Binding Voices}"
+                SelectedItem="{Binding SelectedVoice}"
+                WidthRequest="200" />
+        </HorizontalStackLayout>
+
+        <!-- Text input -->
+        <Editor
+            Placeholder="Enter text to speak"
+            Text="{Binding Text}"
+            AutoSize="TextChanges"
+            HeightRequest="120" />
+
+        <!-- Controls -->
+        <HorizontalStackLayout Spacing="12">
+            <Button
+                Text="Speak"
+                Command="{Binding SpeakCommand}"
+                WidthRequest="120" />
+
+            <Button
+                Text="Stop"
+                Command="{Binding StopCommand}"
+                WidthRequest="120" />
+        </HorizontalStackLayout>
+
+    </VerticalStackLayout>
+</ContentPage>
