@@ -13,8 +13,7 @@ public class StopTests
             captured = req;
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
-        var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8765") };
-        var client = new SoundboardClient(http, new Uri("ws://localhost:8765/stream"));
+        var client = TestHelper.CreateClient(handler);
 
         await client.StopAsync();
 
@@ -27,8 +26,7 @@ public class StopTests
     public async Task StopAsync_RespectsCanellation()
     {
         var handler = new MockHttpHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
-        var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8765") };
-        var client = new SoundboardClient(http, new Uri("ws://localhost:8765/stream"));
+        var client = TestHelper.CreateClient(handler);
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();

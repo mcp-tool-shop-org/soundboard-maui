@@ -2,6 +2,8 @@ using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Soundboard.Client.Models;
 
 namespace Soundboard.Client;
@@ -9,22 +11,32 @@ namespace Soundboard.Client;
 public sealed class SoundboardClient : ISoundboardClient
 {
     private readonly HttpClient _http;
-    private readonly Uri _wsUri;
+    private readonly SoundboardClientOptions _options;
+    private readonly ILogger _logger;
 
-    public SoundboardClient(string baseUrl = "http://localhost:8765")
+    public SoundboardClient(SoundboardClientOptions? options = null, ILogger? logger = null)
     {
-        _http = new HttpClient { BaseAddress = new Uri(baseUrl) };
-        _wsUri = new Uri(baseUrl.Replace("http", "ws") + "/stream");
+        _options = options ?? new SoundboardClientOptions();
+        _logger = logger ?? NullLogger.Instance;
+        _http = new HttpClient
+        {
+            BaseAddress = new Uri(_options.BaseUrl),
+            Timeout = _options.HttpTimeout
+        };
+        _logger.LogDebug("SoundboardClient created: base={BaseUrl}, httpTimeout={Timeout}s",
+            _options.BaseUrl, _options.HttpTimeout.TotalSeconds);
     }
 
-    internal SoundboardClient(HttpClient http, Uri wsUri)
+    internal SoundboardClient(HttpClient http, SoundboardClientOptions options, ILogger? logger = null)
     {
         _http = http;
-        _wsUri = wsUri;
+        _options = options;
+        _logger = logger ?? NullLogger.Instance;
     }
 
     public async Task<EngineInfo> GetHealthAsync(CancellationToken ct = default)
     {
+        _logger.LogDebug("GET /api/health");
         return await _http.GetFromJsonAsync<EngineInfo>(
             "/api/health",
             ct
@@ -33,18 +45,24 @@ public sealed class SoundboardClient : ISoundboardClient
 
     public async Task<IReadOnlyList<string>> GetPresetsAsync(CancellationToken ct = default)
     {
+        _logger.LogDebug("GET /api/presets");
         var response = await _http.GetFromJsonAsync<JsonElement>("/api/presets", ct);
-        return response.GetProperty("presets").EnumerateArray()
+        var presets = response.GetProperty("presets").EnumerateArray()
             .Select(x => x.GetString()!)
             .ToList();
+        _logger.LogDebug("Received {Count} presets", presets.Count);
+        return presets;
     }
 
     public async Task<IReadOnlyList<string>> GetVoicesAsync(CancellationToken ct = default)
     {
+        _logger.LogDebug("GET /api/voices");
         var response = await _http.GetFromJsonAsync<JsonElement>("/api/voices", ct);
-        return response.GetProperty("voices").EnumerateArray()
+        var voices = response.GetProperty("voices").EnumerateArray()
             .Select(x => x.GetProperty("id").GetString()!)
             .ToList();
+        _logger.LogDebug("Received {Count} voices", voices.Count);
+        return voices;
     }
 
     public async Task SpeakAsync(
@@ -53,9 +71,17 @@ public sealed class SoundboardClient : ISoundboardClient
         CancellationToken ct = default)
     {
         using var ws = new ClientWebSocket();
-        await ws.ConnectAsync(_wsUri, ct);
+
+        using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        connectCts.CancelAfter(_options.WebSocketConnectTimeout);
+
+        _logger.LogDebug("Connecting WebSocket to {Uri}", _options.WsUri);
+        await ws.ConnectAsync(_options.WsUri, connectCts.Token);
 
         var requestId = request.ResolvedRequestId;
+        _logger.LogInformation("SpeakAsync started: requestId={RequestId}, text={TextLength}chars",
+            requestId, request.Text.Length);
+
         var message = JsonSerializer.Serialize(new
         {
             type = "speak",
@@ -72,12 +98,16 @@ public sealed class SoundboardClient : ISoundboardClient
 
         var buffer = new byte[8192];
         using var msgStream = new MemoryStream();
+        var chunkCount = 0;
 
         while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
         {
             var result = await ws.ReceiveAsync(buffer, ct);
             if (result.MessageType == WebSocketMessageType.Close)
+            {
+                _logger.LogDebug("WebSocket closed by server");
                 break;
+            }
 
             msgStream.Write(buffer, 0, result.Count);
 
@@ -95,12 +125,14 @@ public sealed class SoundboardClient : ISoundboardClient
                 var pcm = Convert.FromBase64String(payload.GetProperty("data").GetString()!);
                 var rate = payload.GetProperty("sample_rate").GetInt32();
 
+                chunkCount++;
                 audioProgress.Report(new AudioChunk(pcm, rate));
             }
             else if (msgType == "state")
             {
                 var state = json.RootElement.GetProperty("payload")
                     .GetProperty("state").GetString();
+                _logger.LogDebug("State event: {State} (requestId={RequestId})", state, requestId);
                 if (state == "finished")
                     break;
             }
@@ -108,18 +140,24 @@ public sealed class SoundboardClient : ISoundboardClient
             {
                 var errorMsg = json.RootElement.GetProperty("payload")
                     .GetProperty("message").GetString() ?? "Engine error";
+                _logger.LogError("Engine error: {Message} (requestId={RequestId})", errorMsg, requestId);
                 throw new InvalidOperationException(errorMsg);
             }
         }
+
+        _logger.LogInformation("SpeakAsync completed: requestId={RequestId}, chunks={ChunkCount}",
+            requestId, chunkCount);
     }
 
     public async Task StopAsync(CancellationToken ct = default)
     {
+        _logger.LogInformation("POST /api/stop");
         await _http.PostAsync("/api/stop", null, ct);
     }
 
     public ValueTask DisposeAsync()
     {
+        _logger.LogDebug("SoundboardClient disposing");
         _http.Dispose();
         return ValueTask.CompletedTask;
     }

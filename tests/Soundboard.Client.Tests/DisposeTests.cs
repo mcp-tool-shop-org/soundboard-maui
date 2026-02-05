@@ -5,7 +5,8 @@ public class DisposeTests
     [Fact]
     public async Task DisposeAsync_DoesNotThrow()
     {
-        var client = new SoundboardClient("http://localhost:9999");
+        var opts = new SoundboardClientOptions { BaseUrl = "http://localhost:9999" };
+        var client = new SoundboardClient(opts);
 
         // Should not throw even if never used
         await client.DisposeAsync();
@@ -14,7 +15,8 @@ public class DisposeTests
     [Fact]
     public async Task DisposeAsync_DoubleDispose_DoesNotThrow()
     {
-        var client = new SoundboardClient("http://localhost:9999");
+        var opts = new SoundboardClientOptions { BaseUrl = "http://localhost:9999" };
+        var client = new SoundboardClient(opts);
 
         await client.DisposeAsync();
         await client.DisposeAsync();

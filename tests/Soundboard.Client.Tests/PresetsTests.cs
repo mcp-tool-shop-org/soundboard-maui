@@ -10,8 +10,7 @@ public class PresetsTests
                 "presets": ["narrator", "assistant", "whisper"]
             }
             """));
-        var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8765") };
-        var client = new SoundboardClient(http, new Uri("ws://localhost:8765/stream"));
+        var client = TestHelper.CreateClient(handler);
 
         var presets = await client.GetPresetsAsync();
 
@@ -29,8 +28,7 @@ public class PresetsTests
                 "presets": []
             }
             """));
-        var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8765") };
-        var client = new SoundboardClient(http, new Uri("ws://localhost:8765/stream"));
+        var client = TestHelper.CreateClient(handler);
 
         var presets = await client.GetPresetsAsync();
 

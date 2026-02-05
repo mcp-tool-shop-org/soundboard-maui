@@ -14,8 +14,7 @@ public class HealthTests
                 "apiVersion": "1"
             }
             """));
-        var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8765") };
-        var client = new SoundboardClient(http, new Uri("ws://localhost:8765/stream"));
+        var client = TestHelper.CreateClient(handler);
 
         var health = await client.GetHealthAsync();
 
@@ -28,8 +27,7 @@ public class HealthTests
     public async Task GetHealthAsync_ThrowsOnNull()
     {
         var handler = new MockHttpHandler(_ => MockHttpHandler.Json("null"));
-        var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8765") };
-        var client = new SoundboardClient(http, new Uri("ws://localhost:8765/stream"));
+        var client = TestHelper.CreateClient(handler);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => client.GetHealthAsync());

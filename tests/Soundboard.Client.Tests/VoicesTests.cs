@@ -13,8 +13,7 @@ public class VoicesTests
                 ]
             }
             """));
-        var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8765") };
-        var client = new SoundboardClient(http, new Uri("ws://localhost:8765/stream"));
+        var client = TestHelper.CreateClient(handler);
 
         var voices = await client.GetVoicesAsync();
 
@@ -31,8 +30,7 @@ public class VoicesTests
                 "voices": []
             }
             """));
-        var http = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:8765") };
-        var client = new SoundboardClient(http, new Uri("ws://localhost:8765/stream"));
+        var client = TestHelper.CreateClient(handler);
 
         var voices = await client.GetVoicesAsync();
 
