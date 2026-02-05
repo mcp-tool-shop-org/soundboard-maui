@@ -21,6 +21,13 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     private const string FirstRunHint = "Type a line \u2014 anything works.";
     private const string ReturningHint = "Try a different style for a new delivery.";
 
+    private static readonly string[] ExamplePhrases =
+    [
+        "Welcome to the future of voice.",
+        "Make it dramatic.",
+        "Say this like you mean it."
+    ];
+
     private string _text = "";
     private string? _selectedPreset;
     private string? _selectedVoice;
@@ -59,6 +66,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         WelcomeSpeakCommand = new Command(async () => await WelcomeSpeakAsync());
         DismissWelcomeCommand = new Command(DismissWelcome);
         RetryConnectCommand = new Command(async () => await LoadAsync(), () => IsOffline);
+        SetExampleCommand = new Command<string>(phrase => Text = phrase);
     }
 
     public ICommand SpeakCommand { get; }
@@ -66,6 +74,9 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     public ICommand WelcomeSpeakCommand { get; }
     public ICommand DismissWelcomeCommand { get; }
     public ICommand RetryConnectCommand { get; }
+    public ICommand SetExampleCommand { get; }
+
+    public IReadOnlyList<string> Examples => ExamplePhrases;
 
     public string Text
     {
@@ -162,6 +173,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     }
 
     public bool CanSpeak => !IsSpeaking && !string.IsNullOrWhiteSpace(Text) && IsConnected;
+    public bool ShowExamples => !IsSpeaking && string.IsNullOrWhiteSpace(Text);
 
     public string SpeakHintText =>
         IsOffline ? "Disconnected — tap the status above to reconnect." :
@@ -304,6 +316,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSpeak)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowSpeakHint)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SpeakHintText)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowExamples)));
     }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)

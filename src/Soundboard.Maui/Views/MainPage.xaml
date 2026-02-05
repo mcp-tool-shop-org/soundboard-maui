@@ -51,6 +51,53 @@
                         FontSize="12"
                         TextColor="{AppThemeBinding Light=#666666, Dark=#AAAAAA}"
                         FontAttributes="Italic" />
+
+                    <!-- Try these examples -->
+                    <VerticalStackLayout Spacing="6" IsVisible="{Binding ShowExamples}">
+                        <Label
+                            Text="Try:"
+                            FontSize="12"
+                            FontAttributes="Bold"
+                            TextColor="{AppThemeBinding Light=#888888, Dark=#999999}" />
+                        <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Start" JustifyContent="Start">
+                            <Button
+                                Text="Welcome to the future of voice."
+                                Command="{Binding SetExampleCommand}"
+                                CommandParameter="Welcome to the future of voice."
+                                FontSize="12"
+                                HeightRequest="32"
+                                Padding="12,0"
+                                Margin="0,0,6,6"
+                                CornerRadius="16"
+                                BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#333333}"
+                                TextColor="{AppThemeBinding Light=#333333, Dark=#DDDDDD}"
+                                BorderWidth="0" />
+                            <Button
+                                Text="Make it dramatic."
+                                Command="{Binding SetExampleCommand}"
+                                CommandParameter="Make it dramatic."
+                                FontSize="12"
+                                HeightRequest="32"
+                                Padding="12,0"
+                                Margin="0,0,6,6"
+                                CornerRadius="16"
+                                BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#333333}"
+                                TextColor="{AppThemeBinding Light=#333333, Dark=#DDDDDD}"
+                                BorderWidth="0" />
+                            <Button
+                                Text="Say this like you mean it."
+                                Command="{Binding SetExampleCommand}"
+                                CommandParameter="Say this like you mean it."
+                                FontSize="12"
+                                HeightRequest="32"
+                                Padding="12,0"
+                                Margin="0,0,6,6"
+                                CornerRadius="16"
+                                BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#333333}"
+                                TextColor="{AppThemeBinding Light=#333333, Dark=#DDDDDD}"
+                                BorderWidth="0" />
+                        </FlexLayout>
+                    </VerticalStackLayout>
                 </VerticalStackLayout>
 
                 <!-- Style -->
