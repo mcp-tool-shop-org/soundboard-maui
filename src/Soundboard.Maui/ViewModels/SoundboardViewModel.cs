@@ -109,12 +109,13 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     }
 
     public bool CanSpeak => !IsSpeaking && !string.IsNullOrWhiteSpace(Text);
+    public bool ShowSpeakHint => !CanSpeak && !IsSpeaking;
 
     public async Task LoadAsync(CancellationToken ct = default)
     {
         try
         {
-            Status = "Connecting...";
+            Status = "Connecting \u2014 this usually takes a second";
             var health = await _client.GetHealthAsync(ct);
             Status = $"\u25cf Engine v{health.EngineVersion} (API {health.ApiVersion})";
 
@@ -214,6 +215,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         (SpeakCommand as Command)?.ChangeCanExecute();
         (StopCommand as Command)?.ChangeCanExecute();
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSpeak)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShowSpeakHint)));
     }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)

@@ -71,6 +71,14 @@
                     TextColor="White"
                     HorizontalOptions="Fill" />
 
+                <!-- Why Speak is disabled -->
+                <Label
+                    Text="Add a line of text to hear it spoken."
+                    IsVisible="{Binding ShowSpeakHint}"
+                    FontSize="12"
+                    TextColor="{AppThemeBinding Light=#999999, Dark=#777777}"
+                    HorizontalTextAlignment="Center" />
+
                 <Button
                     Text="Stop"
                     Command="{Binding StopCommand}"
