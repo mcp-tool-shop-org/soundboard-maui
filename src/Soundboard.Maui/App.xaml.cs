@@ -14,6 +14,15 @@ public partial class App : Application
 
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        return new Window(new NavigationPage(_mainPage));
+        var window = new Window(new NavigationPage(_mainPage))
+        {
+            Title = "Soundboard",
+            Width = 540,
+            Height = 760,
+            MinimumWidth = 400,
+            MinimumHeight = 600
+        };
+
+        return window;
     }
 }
