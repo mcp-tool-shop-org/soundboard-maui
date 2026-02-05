@@ -83,7 +83,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         {
             Status = "Connecting...";
             var health = await _client.GetHealthAsync(ct);
-            Status = $"Engine v{health.EngineVersion} (API {health.ApiVersion})";
+            Status = $"\u25cf Engine v{health.EngineVersion} (API {health.ApiVersion})";
 
             var presets = await _client.GetPresetsAsync(ct);
             Presets.Clear();
@@ -97,7 +97,7 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         }
         catch (Exception ex)
         {
-            Status = $"Offline: {ex.Message}";
+            Status = $"\u25cb Offline: {ex.Message}";
         }
     }
 
@@ -116,7 +116,16 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
         {
             _player.Start(sampleRate: 24000);
 
-            var progress = new Progress<AudioChunk>(chunk => _player.Feed(chunk));
+            var firstChunk = true;
+            var progress = new Progress<AudioChunk>(chunk =>
+            {
+                _player.Feed(chunk);
+                if (firstChunk)
+                {
+                    firstChunk = false;
+                    Status = "Playing...";
+                }
+            });
 
             await _client.SpeakAsync(
                 new SpeakRequest(Text, SelectedPreset ?? "assistant", SelectedVoice ?? "default"),
