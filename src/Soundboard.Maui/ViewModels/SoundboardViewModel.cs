@@ -153,8 +153,22 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     public bool PickersLoading
     {
         get => _pickersLoading;
-        private set => SetField(ref _pickersLoading, value);
+        private set
+        {
+            if (SetField(ref _pickersLoading, value))
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PickersEnabled)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StylePickerTitle)));
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(VoicePickerTitle)));
+            }
+        }
     }
+
+    // Computed properties replacing XAML converters (avoids WinUI XAML crash)
+    public bool PickersEnabled => !PickersLoading;
+    public string StylePickerTitle => PickersLoading ? "Loading style\u2026" : "Style";
+    public string VoicePickerTitle => PickersLoading ? "Loading voice\u2026" : "Voice";
+    public double WelcomeOpacity => ShowWelcome ? 0.3 : 1.0;
 
     public ObservableCollection<string> Presets { get; } = [];
     public ObservableCollection<string> Voices { get; } = [];
@@ -174,7 +188,11 @@ public sealed class SoundboardViewModel : INotifyPropertyChanged, IDisposable
     public bool ShowWelcome
     {
         get => _showWelcome;
-        private set => SetField(ref _showWelcome, value);
+        private set
+        {
+            if (SetField(ref _showWelcome, value))
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(WelcomeOpacity)));
+        }
     }
 
     public bool IsOffline

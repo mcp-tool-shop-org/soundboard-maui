@@ -18,7 +18,6 @@ public partial class MainPage : ContentPage
     {
         await _vm.LoadAsync();
 
-        // Focus the text editor once welcome is dismissed or not shown
         if (!_vm.ShowWelcome)
             TextEditor.Focus();
     }
