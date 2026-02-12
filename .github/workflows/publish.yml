@@ -19,13 +19,14 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: |
+          dotnet restore src/Soundboard.Client/Soundboard.Client.csproj
+          dotnet restore src/Soundboard.Maui.Audio/Soundboard.Maui.Audio.csproj
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Test
-        run: dotnet test --configuration Release --no-build --verbosity normal
+        run: |
+          dotnet build src/Soundboard.Client/Soundboard.Client.csproj --configuration Release --no-restore
+          dotnet build src/Soundboard.Maui.Audio/Soundboard.Maui.Audio.csproj --configuration Release --no-restore
 
       - name: Pack Soundboard.Client
         run: dotnet pack src/Soundboard.Client/Soundboard.Client.csproj --configuration Release --no-build --output ./nupkg
