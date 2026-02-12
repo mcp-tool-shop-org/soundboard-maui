@@ -43,6 +43,15 @@ public class OptionsTests
     }
 
     [Fact]
+    public void WsUri_HttpsBecomesWss()
+    {
+        var opts = new SoundboardClientOptions { BaseUrl = "https://engine.example.com:443" };
+
+        Assert.Equal("wss", opts.WsUri.Scheme);
+        Assert.Equal("/stream", opts.WsUri.AbsolutePath);
+    }
+
+    [Fact]
     public void CustomOptions_Override()
     {
         var opts = new SoundboardClientOptions

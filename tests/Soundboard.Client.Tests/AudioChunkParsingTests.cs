@@ -97,4 +97,23 @@ public class AudioChunkParsingTests
         Assert.Equal("0.9.0", info.EngineVersion);
         Assert.Equal("1", info.ApiVersion);
     }
+
+    [Fact]
+    public void EngineInfo_DeserializesSnakeCase()
+    {
+        var json = """
+            {
+                "status": "ready",
+                "engine_version": "1.0.0",
+                "api_version": "1"
+            }
+            """;
+
+        var info = System.Text.Json.JsonSerializer.Deserialize<EngineInfo>(json);
+
+        Assert.NotNull(info);
+        Assert.Equal("ready", info!.Status);
+        Assert.Equal("1.0.0", info.EngineVersion);
+        Assert.Equal("1", info.ApiVersion);
+    }
 }

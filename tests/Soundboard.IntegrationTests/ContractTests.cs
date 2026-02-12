@@ -243,8 +243,8 @@ internal sealed class ErrorEngineServer : IAsyncDisposable
         _app.MapGet("/api/health", () => Results.Json(new
         {
             status = "ready",
-            engineVersion = "error-1.0",
-            apiVersion = "1"
+            engine_version = "error-1.0",
+            api_version = "1"
         }));
 
         _app.Map("/stream", async context =>
@@ -304,8 +304,8 @@ internal sealed class VersionMismatchServer : IAsyncDisposable
         _app.MapGet("/api/health", () => Results.Json(new
         {
             status = "ready",
-            engineVersion = "future-2.0",
-            apiVersion = "99"
+            engine_version = "future-2.0",
+            api_version = "99"
         }));
     }
 

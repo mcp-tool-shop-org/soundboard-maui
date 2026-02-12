@@ -10,8 +10,8 @@ public class HealthTests
         var handler = new MockHttpHandler(_ => MockHttpHandler.Json("""
             {
                 "status": "ok",
-                "engineVersion": "0.9.0",
-                "apiVersion": "1"
+                "engine_version": "0.9.0",
+                "api_version": "1"
             }
             """));
         var client = TestHelper.CreateClient(handler);

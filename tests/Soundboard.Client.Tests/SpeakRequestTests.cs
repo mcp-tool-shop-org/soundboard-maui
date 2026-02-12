@@ -5,15 +5,15 @@ namespace Soundboard.Client.Tests;
 public class SpeakRequestTests
 {
     [Fact]
-    public void ResolvedRequestId_GeneratesWhenNull()
+    public void ResolvedRequestId_StablePerInstance()
     {
         var req = new SpeakRequest("Hello", "narrator", "af_bella");
 
         var id1 = req.ResolvedRequestId;
         var id2 = req.ResolvedRequestId;
 
-        // Each call generates a new GUID when RequestId is null
-        Assert.NotEqual(id1, id2);
+        // Now stable per instance (lazy-initialized)
+        Assert.Equal(id1, id2);
         Assert.True(Guid.TryParse(id1, out _));
     }
 

@@ -50,7 +50,7 @@ public sealed class SoundboardClient : ISoundboardClient
         var health = await _http.GetFromJsonAsync<EngineInfo>(
             "/api/health",
             ct
-        ) ?? throw new InvalidOperationException("Invalid health response");
+        ).ConfigureAwait(false) ?? throw new InvalidOperationException("Invalid health response");
 
         if (!string.IsNullOrEmpty(health.ApiVersion) && health.ApiVersion != SdkApiVersion)
         {
@@ -67,7 +67,7 @@ public sealed class SoundboardClient : ISoundboardClient
     public async Task<IReadOnlyList<string>> GetPresetsAsync(CancellationToken ct = default)
     {
         _logger.LogDebug("GET /api/presets");
-        var response = await _http.GetFromJsonAsync<JsonElement>("/api/presets", ct);
+        var response = await _http.GetFromJsonAsync<JsonElement>("/api/presets", ct).ConfigureAwait(false);
         var presets = response.GetProperty("presets").EnumerateArray()
             .Select(x => x.GetString()!)
             .ToList();
@@ -79,7 +79,7 @@ public sealed class SoundboardClient : ISoundboardClient
     public async Task<IReadOnlyList<string>> GetVoicesAsync(CancellationToken ct = default)
     {
         _logger.LogDebug("GET /api/voices");
-        var response = await _http.GetFromJsonAsync<JsonElement>("/api/voices", ct);
+        var response = await _http.GetFromJsonAsync<JsonElement>("/api/voices", ct).ConfigureAwait(false);
         var voices = response.GetProperty("voices").EnumerateArray()
             .Select(x => x.GetProperty("id").GetString()!)
             .ToList();
@@ -99,7 +99,7 @@ public sealed class SoundboardClient : ISoundboardClient
         connectCts.CancelAfter(_options.WebSocketConnectTimeout);
 
         _logger.LogDebug("Connecting WebSocket to {Uri}", _options.WsUri);
-        await ws.ConnectAsync(_options.WsUri, connectCts.Token);
+        await ws.ConnectAsync(_options.WsUri, connectCts.Token).ConfigureAwait(false);
 
         var requestId = request.ResolvedRequestId;
         _logger.LogInformation("SpeakAsync started: requestId={RequestId}, text={TextLength}chars",
@@ -117,57 +117,80 @@ public sealed class SoundboardClient : ISoundboardClient
             WebSocketMessageType.Text,
             true,
             ct
-        );
+        ).ConfigureAwait(false);
 
         var buffer = new byte[8192];
         using var msgStream = new MemoryStream();
         var chunkCount = 0;
 
-        while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
+        try
         {
-            using var receiveCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            receiveCts.CancelAfter(_options.WebSocketReceiveTimeout);
-
-            var result = await ws.ReceiveAsync(buffer, receiveCts.Token);
-            if (result.MessageType == WebSocketMessageType.Close)
+            while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
             {
-                _logger.LogDebug("WebSocket closed by server");
-                break;
-            }
+                using var receiveCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                receiveCts.CancelAfter(_options.WebSocketReceiveTimeout);
 
-            msgStream.Write(buffer, 0, result.Count);
-
-            if (!result.EndOfMessage)
-                continue;
-
-            using var json = JsonDocument.Parse(msgStream.ToArray());
-            msgStream.SetLength(0);
-
-            var msgType = json.RootElement.GetProperty("type").GetString();
-
-            if (msgType == "audio_chunk")
-            {
-                var payload = json.RootElement.GetProperty("payload");
-                var pcm = Convert.FromBase64String(payload.GetProperty("data").GetString()!);
-                var rate = payload.GetProperty("sample_rate").GetInt32();
-
-                chunkCount++;
-                audioProgress.Report(new AudioChunk(pcm, rate));
-            }
-            else if (msgType == "state")
-            {
-                var state = json.RootElement.GetProperty("payload")
-                    .GetProperty("state").GetString();
-                _logger.LogDebug("State event: {State} (requestId={RequestId})", state, requestId);
-                if (state == "finished")
+                var result = await ws.ReceiveAsync(buffer, receiveCts.Token).ConfigureAwait(false);
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    _logger.LogDebug("WebSocket closed by server");
                     break;
+                }
+
+                msgStream.Write(buffer, 0, result.Count);
+
+                if (!result.EndOfMessage)
+                    continue;
+
+                using var json = JsonDocument.Parse(msgStream.ToArray());
+                msgStream.SetLength(0);
+
+                var msgType = json.RootElement.GetProperty("type").GetString();
+
+                if (msgType == "audio_chunk")
+                {
+                    var payload = json.RootElement.GetProperty("payload");
+                    var pcm = Convert.FromBase64String(payload.GetProperty("data").GetString()!);
+                    var rate = payload.GetProperty("sample_rate").GetInt32();
+
+                    chunkCount++;
+                    audioProgress.Report(new AudioChunk(pcm, rate));
+                }
+                else if (msgType == "state")
+                {
+                    var state = json.RootElement.GetProperty("payload")
+                        .GetProperty("state").GetString();
+                    _logger.LogDebug("State event: {State} (requestId={RequestId})", state, requestId);
+                    if (state == "finished")
+                        break;
+                }
+                else if (msgType == "error")
+                {
+                    var errorMsg = json.RootElement.GetProperty("payload")
+                        .GetProperty("message").GetString() ?? "Engine error";
+                    _logger.LogError("Engine error: {Message} (requestId={RequestId})", errorMsg, requestId);
+                    throw new InvalidOperationException(errorMsg);
+                }
             }
-            else if (msgType == "error")
+        }
+        finally
+        {
+            // Gracefully close the WebSocket if it's still open
+            if (ws.State is WebSocketState.Open or WebSocketState.CloseReceived)
             {
-                var errorMsg = json.RootElement.GetProperty("payload")
-                    .GetProperty("message").GetString() ?? "Engine error";
-                _logger.LogError("Engine error: {Message} (requestId={RequestId})", errorMsg, requestId);
-                throw new InvalidOperationException(errorMsg);
+                try
+                {
+                    using var closeCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    await ws.CloseAsync(
+                        WebSocketCloseStatus.NormalClosure,
+                        "done",
+                        closeCts.Token
+                    ).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug("WebSocket close failed (non-critical): {Message}", ex.Message);
+                }
             }
         }
 
@@ -179,7 +202,7 @@ public sealed class SoundboardClient : ISoundboardClient
     public async Task StopAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("POST /api/stop");
-        await _http.PostAsync("/api/stop", null, ct);
+        await _http.PostAsync("/api/stop", null, ct).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

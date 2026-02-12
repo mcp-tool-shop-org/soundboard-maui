@@ -12,6 +12,8 @@ public sealed record SpeakRequest(
     string? RequestId = null
 )
 {
-    /// <summary>Resolved ID: uses explicit value or generates one.</summary>
-    internal string ResolvedRequestId => RequestId ?? Guid.NewGuid().ToString();
+    private string? _resolvedId;
+
+    /// <summary>Resolved ID: uses explicit value or generates a stable one per instance.</summary>
+    internal string ResolvedRequestId => RequestId ?? (_resolvedId ??= Guid.NewGuid().ToString());
 }

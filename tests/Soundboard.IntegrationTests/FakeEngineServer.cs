@@ -25,8 +25,8 @@ public sealed class FakeEngineServer : IAsyncDisposable
         _app.MapGet("/api/health", () => Results.Json(new
         {
             status = "ready",
-            engineVersion = "fake-1.0",
-            apiVersion = "1"
+            engine_version = "fake-1.0",
+            api_version = "1"
         }));
 
         _app.MapGet("/api/presets", () => Results.Json(new

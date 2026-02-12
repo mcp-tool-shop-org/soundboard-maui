@@ -19,5 +19,18 @@ public sealed record SoundboardClientOptions
     /// <summary>Timeout between consecutive WebSocket messages during streaming.</summary>
     public TimeSpan WebSocketReceiveTimeout { get; init; } = TimeSpan.FromSeconds(30);
 
-    internal Uri WsUri => new(BaseUrl.Replace("http", "ws") + "/stream");
+    internal Uri WsUri
+    {
+        get
+        {
+            var builder = new UriBuilder(BaseUrl);
+            builder.Scheme = builder.Scheme switch
+            {
+                "https" => "wss",
+                _ => "ws"
+            };
+            builder.Path = builder.Path.TrimEnd('/') + "/stream";
+            return builder.Uri;
+        }
+    }
 }
