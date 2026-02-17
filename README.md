@@ -1,5 +1,8 @@
 # Soundboard
 
+> Part of [MCP Tool Shop](https://mcptoolshop.com)
+
+
 A .NET SDK and reference client for streaming voice engines.
 
 > **Two things live here:** a standalone SDK (`Soundboard.Client`) and a MAUI desktop app that demonstrates it. The SDK is the product. The app is a reference integration.
