@@ -4,7 +4,7 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
 
     <!-- NuGet SDK metadata -->
     <PackageId>Soundboard.Client</PackageId>
@@ -16,11 +16,13 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>tts;speech;streaming;voice;sdk;soundboard</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\..\docs\sdk-readme.md" Pack="true" PackagePath="README.md" />
+    <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
