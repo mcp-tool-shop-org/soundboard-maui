@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.png" width="200" alt="soundboard-maui">
+</p>
+
 # Soundboard
 
 > Part of [MCP Tool Shop](https://mcptoolshop.com)
