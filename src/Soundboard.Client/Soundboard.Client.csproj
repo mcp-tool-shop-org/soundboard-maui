@@ -11,6 +11,7 @@
     <Description>Streaming TTS client SDK for voice engines implementing the Soundboard API contract. Zero UI dependencies.</Description>
     <Authors>mcp-tool-shop</Authors>
     <RepositoryUrl>https://github.com/mcp-tool-shop-org/soundboard-maui</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/mcp-tool-shop-org/soundboard-maui</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>tts;speech;streaming;voice;sdk;soundboard</PackageTags>
