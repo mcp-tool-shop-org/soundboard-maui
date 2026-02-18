@@ -2,32 +2,62 @@
   <img src="assets/icon.png" width="200" alt="soundboard-maui">
 </p>
 
-# Soundboard
+# soundboard-maui
 
 > Part of [MCP Tool Shop](https://mcptoolshop.com)
 
+[![Publish to NuGet](https://github.com/mcp-tool-shop-org/soundboard-maui/actions/workflows/publish.yml/badge.svg)](https://github.com/mcp-tool-shop-org/soundboard-maui/actions/workflows/publish.yml)
+![.NET 8 | 9 | 10](https://img.shields.io/badge/.NET-8%20%7C%209%20%7C%2010-512BD4?logo=dotnet)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A .NET SDK and reference client for streaming voice engines.
+**Cross-platform .NET MAUI desktop client for the Sound Board voice engine.**
 
-> **Two things live here:** a standalone SDK (`Soundboard.Client`) and a MAUI desktop app that demonstrates it. The SDK is the product. The app is a reference integration.
+---
 
-## SDK quick start
+## Why Soundboard MAUI?
+
+- **SDK-first design** — `Soundboard.Client` is a standalone .NET 8+ library with zero UI dependencies. Use it in console apps, WPF, ASP.NET, MAUI, or anything that targets .NET.
+- **Real-time streaming** — Audio arrives chunk-by-chunk over WebSocket via `IProgress<AudioChunk>`. No waiting for the full synthesis to finish.
+- **Engine-agnostic** — The SDK speaks a documented [API contract](docs/api-contract.md). Swap engines without changing your code.
+- **Multi-target** — Ships for `net8.0`, `net9.0`, and `net10.0` so you can reference it from any modern .NET project.
+- **Structured logging** — Built-in `ILogger` support for diagnostics without pulling in a logging framework.
+- **Reference clients included** — A MAUI desktop app and a CLI tool show real integration patterns you can copy.
+
+---
+
+## NuGet Packages
+
+| Package | Description | Version |
+|---|---|---|
+| **[Soundboard.Client](https://www.nuget.org/packages/Soundboard.Client)** | Front-door SDK — streaming TTS client for any Soundboard-compatible voice engine. Pure C#, zero UI deps. | 1.2.0 |
+| **[Soundboard.Maui.Audio](https://www.nuget.org/packages/Soundboard.Maui.Audio)** | NAudio-based PCM16 streaming playback adapter for Windows. Provides `IAudioPlayer` with buffering, thread-safe start/stop/flush, and playback state tracking. | 1.0.0 |
+
+---
+
+## Quick Start
+
+### Install the SDK
 
 ```bash
 dotnet add package Soundboard.Client
 ```
+
+### Speak in five lines
 
 ```csharp
 using Soundboard.Client;
 using Soundboard.Client.Models;
 
 await using var client = new SoundboardClient();
-var presets = await client.GetPresetsAsync();
-var voices = await client.GetVoicesAsync();
 
+// Discover what the engine offers
+var presets = await client.GetPresetsAsync();
+var voices  = await client.GetVoicesAsync();
+
+// Stream speech — chunks arrive as they are synthesized
 var progress = new Progress<AudioChunk>(chunk =>
 {
-    // Feed chunk.PcmData to your audio output
+    // Feed chunk.PcmData (PCM16, mono) to your audio output
 });
 
 await client.SpeakAsync(
@@ -37,48 +67,111 @@ await client.SpeakAsync(
 
 No MAUI dependency. Works in console apps, WPF, ASP.NET, or anything targeting .NET 8+.
 
+### Configuration
+
+The client reads `SOUNDBOARD_BASE_URL` from the environment, defaulting to `http://localhost:8765`. Override it in code:
+
+```csharp
+var client = new SoundboardClient(new SoundboardClientOptions
+{
+    BaseUrl = "http://my-engine:9000",
+    HttpTimeout = TimeSpan.FromSeconds(15),
+    WebSocketConnectTimeout = TimeSpan.FromSeconds(10),
+    WebSocketReceiveTimeout = TimeSpan.FromSeconds(60)
+});
+```
+
+### SDK surface
+
+| Method | Description |
+|---|---|
+| `GetHealthAsync()` | Engine health check — returns version info and readiness status |
+| `GetPresetsAsync()` | Lists available preset identifiers (e.g. `narrator`, `conversational`) |
+| `GetVoicesAsync()` | Lists available voice identifiers |
+| `SpeakAsync(request, progress)` | Streams synthesized speech; reports `AudioChunk` via `IProgress<T>` |
+| `StopAsync()` | Sends a stop command to the engine |
+
+All methods accept `CancellationToken`. The client implements `IAsyncDisposable`.
+
+---
+
 ## Architecture
 
 ```
 This repository
-+------------------------------------------+
-|                                          |
-|  Soundboard.Client (SDK)     net8.0      |  <-- The product
-|  Soundboard.Maui.Audio       net8.0      |  <-- NAudio adapter (Windows)
-|  Soundboard.Maui             net10.0     |  <-- Reference client (MAUI)
-|  soundboard-cli              net8.0      |  <-- Reference client (console)
-|                                          |
-+------------------------------------------+
-            |  HTTP + WebSocket
++-------------------------------------------+
+|                                           |
+|  Soundboard.Client (SDK)     net8.0+      |  <-- The product
+|  Soundboard.Maui.Audio       net8.0       |  <-- NAudio adapter (Windows)
+|  Soundboard.Maui             net10.0      |  <-- Reference client (MAUI)
+|  soundboard-cli              net8.0       |  <-- Reference client (console)
+|                                           |
++-------------------------------------------+
+            |  HTTP (control) + WebSocket (audio)
             v
-+------------------------------------------+
-|  voice-soundboard (engine repo)          |
-|  Any engine implementing the contract    |
-+------------------------------------------+
++-------------------------------------------+
+|  voice-soundboard (engine repo)           |
+|  Any engine implementing the API contract |
++-------------------------------------------+
 ```
 
-The SDK speaks the [API contract](docs/api-contract.md). Any compliant engine works.
+**Control plane** (HTTP) — health, presets, voices, stop.
+**Data plane** (WebSocket) — bidirectional: speak commands go up, PCM16 audio chunks stream down.
 
-## Project structure
+The SDK handles connection lifecycle, JSON framing, base64 decoding, graceful WebSocket close, and API version compatibility checks automatically.
+
+---
+
+## Installation from Source
+
+### Prerequisites
+
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/) with MAUI workload (for the desktop app)
+- .NET 8.0 SDK (sufficient for the SDK and CLI alone)
+- Windows 10/11 (for the MAUI app and NAudio playback)
+- A running [voice-soundboard](https://github.com/mcp-tool-shop-org/voice-soundboard) engine
+
+### Clone and run
+
+```bash
+git clone https://github.com/mcp-tool-shop-org/soundboard-maui.git
+cd soundboard-maui
+
+# Run unit + integration tests (no engine required)
+dotnet test
+
+# Run the MAUI desktop app
+set SOUNDBOARD_BASE_URL=http://localhost:8765
+dotnet run --project src/Soundboard.Maui
+
+# Run the CLI client
+dotnet run --project src/soundboard-cli -- health
+dotnet run --project src/soundboard-cli -- presets
+dotnet run --project src/soundboard-cli -- speak "Hello world" --preset narrator
+```
+
+---
+
+## Project Structure
 
 ```
 src/
-  Soundboard.Client/         SDK — pure C# (net8.0, zero UI deps)
-  Soundboard.Maui.Audio/     NAudio PCM16 playback adapter (Windows)
-  Soundboard.Maui/           Reference client — MAUI desktop app
-  soundboard-cli/            Reference client — console app
+  Soundboard.Client/         SDK — pure C#, net8.0/9.0/10.0, zero UI deps
+  Soundboard.Maui.Audio/     NAudio PCM16 playback adapter (Windows, net8.0)
+  Soundboard.Maui/           Reference desktop client (MAUI, net10.0)
+  soundboard-cli/            Reference console client (net8.0)
 
 examples/
-  Quickstart/                Zero-config "hello world" → WAV file
-  AgentTool/                 SDK as a callable tool in an agent pipeline
+  Quickstart/                Connect → speak → save WAV in 30 seconds
+  AgentTool/                 SDK as a callable tool in an AI agent pipeline
 
 tests/
   Soundboard.Client.Tests/         27 unit tests (no engine required)
   Soundboard.IntegrationTests/     17 integration + contract tests
 
 docs/
-  api.md                     SDK API reference v1.0
-  api-contract.md            Engine <-> SDK protocol spec
+  api.md                     SDK API reference (v1.0 stability guarantees)
+  api-contract.md            Engine <-> SDK wire protocol
   compatibility.md           SDK-engine compatibility matrix & trust contract
   getting-started-sdk.md     SDK integration guide
   streaming-model.md         How audio streaming works
@@ -86,60 +179,19 @@ docs/
   feature-map.md             Feature-to-layer mapping
   known-limitations.md       Current boundaries
   evaluation-guide.md        How to evaluate Soundboard
+  publishing.md              NuGet publish runbook
 ```
 
-## Run the reference client
-
-```bash
-# Prerequisites: .NET 10.0 SDK with MAUI workload, Windows 10/11
-
-git clone https://github.com/mcp-tool-shop-org/soundboard-maui.git
-cd soundboard-maui
-
-# Run tests (no engine needed)
-dotnet test
-
-# Build and run the MAUI app
-set SOUNDBOARD_BASE_URL=http://localhost:8765
-dotnet run --project src/Soundboard.Maui
-```
-
-## Run the CLI client
-
-```bash
-# Check engine health
-dotnet run --project src/soundboard-cli -- health
-
-# List available presets
-dotnet run --project src/soundboard-cli -- presets
-
-# Speak text (streams to WAV file)
-dotnet run --project src/soundboard-cli -- speak "Hello world" --preset narrator
-```
-
-## FAQ
-
-**What is the SDK?**
-`Soundboard.Client` is a standalone .NET 8 library that handles all engine communication — health checks, discovery, and streaming speech over WebSocket. Reference it from any .NET project.
-
-**What is the MAUI app?**
-A reference client that demonstrates the SDK with a desktop UI. It is not the product — it shows one way to use the SDK.
-
-**Is this production-ready?**
-The SDK API (v1.0) is stable. The MAUI app is demo-grade. See [known limitations](docs/known-limitations.md).
-
-**Can I build my own UI?**
-Yes. That is the point. The SDK has zero UI dependencies. Implement `IAudioPlayer` for your platform and go.
-
-**Where does the engine live?**
-In a separate repository: [voice-soundboard](https://github.com/mcp-tool-shop-org/voice-soundboard). This repo contains zero engine code.
+---
 
 ## Examples
 
 | Example | What it shows |
 |---|---|
-| [Quickstart](examples/Quickstart/) | Connect, speak, save WAV — 30 seconds |
+| [Quickstart](examples/Quickstart/) | Connect, speak, save WAV — zero config |
 | [Agent Tool](examples/AgentTool/) | SDK as a callable tool in an AI agent pipeline |
+
+---
 
 ## Documentation
 
@@ -157,7 +209,37 @@ In a separate repository: [voice-soundboard](https://github.com/mcp-tool-shop-or
 - [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 
-## Related
+---
+
+## FAQ
+
+**What is the SDK?**
+`Soundboard.Client` is a standalone .NET 8+ library that handles all engine communication — health checks, discovery, and streaming speech over WebSocket. Reference it from any .NET project.
+
+**What is the MAUI app?**
+A reference client that demonstrates the SDK with a desktop UI. It is not the product — it shows one way to use the SDK.
+
+**Is this production-ready?**
+The SDK API (v1.0) is stable. The MAUI app is demo-grade. See [known limitations](docs/known-limitations.md).
+
+**Can I build my own UI?**
+Yes. That is the point. The SDK has zero UI dependencies. Implement `IAudioPlayer` for your platform and go.
+
+**Where does the engine live?**
+In a separate repository: [voice-soundboard](https://github.com/mcp-tool-shop-org/voice-soundboard). This repo contains zero engine code.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## Links
 
 - [Engine repository](https://github.com/mcp-tool-shop-org/voice-soundboard)
+- [MCP Tool Shop](https://mcptoolshop.com)
+- [Soundboard.Client on NuGet](https://www.nuget.org/packages/Soundboard.Client)
+- [Soundboard.Maui.Audio on NuGet](https://www.nuget.org/packages/Soundboard.Maui.Audio)
 - [Known limitations](docs/known-limitations.md)
