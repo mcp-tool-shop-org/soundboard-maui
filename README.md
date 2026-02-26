@@ -6,10 +6,6 @@
   <img src="https://raw.githubusercontent.com/mcp-tool-shop-org/soundboard-maui/main/logo-soundboard-maui.png" alt="Soundboard MAUI logo" width="400">
 </p>
 
-# soundboard-maui
-
-> Part of [MCP Tool Shop](https://mcptoolshop.com)
-
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/soundboard-maui/actions/workflows/publish.yml"><img src="https://github.com/mcp-tool-shop-org/soundboard-maui/actions/workflows/publish.yml/badge.svg" alt="Publish"></a>
   <img src="https://img.shields.io/badge/.NET-8%20%7C%209%20%7C%2010-512BD4" alt=".NET 8 | 9 | 10">
