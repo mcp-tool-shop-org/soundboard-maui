@@ -1,14 +1,21 @@
 <p align="center">
-  <img src="assets/icon.png" width="200" alt="soundboard-maui">
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mcp-tool-shop-org/soundboard-maui/main/logo-soundboard-maui.png" alt="Soundboard MAUI logo" width="400">
 </p>
 
 # soundboard-maui
 
 > Part of [MCP Tool Shop](https://mcptoolshop.com)
 
-[![Publish to NuGet](https://github.com/mcp-tool-shop-org/soundboard-maui/actions/workflows/publish.yml/badge.svg)](https://github.com/mcp-tool-shop-org/soundboard-maui/actions/workflows/publish.yml)
-![.NET 8 | 9 | 10](https://img.shields.io/badge/.NET-8%20%7C%209%20%7C%2010-512BD4?logo=dotnet)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/mcp-tool-shop-org/soundboard-maui/actions/workflows/publish.yml"><img src="https://github.com/mcp-tool-shop-org/soundboard-maui/actions/workflows/publish.yml/badge.svg" alt="Publish"></a>
+  <img src="https://img.shields.io/badge/.NET-8%20%7C%209%20%7C%2010-512BD4" alt=".NET 8 | 9 | 10">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://mcp-tool-shop-org.github.io/soundboard-maui/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
+</p>
 
 **Cross-platform .NET MAUI desktop client for the Sound Board voice engine.**
 
