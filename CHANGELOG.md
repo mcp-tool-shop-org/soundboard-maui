@@ -4,6 +4,13 @@ All notable changes to the Soundboard SDK and reference clients.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/). SDK versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-02-27
+
+### Added
+
+- Shipcheck audit — SHIP_GATE.md, SCORECARD.md, SECURITY.md
+- Security & Data Scope section in README
+
 ## [1.1.0] - 2026-02-12
 
 ### SDK (Soundboard.Client)
